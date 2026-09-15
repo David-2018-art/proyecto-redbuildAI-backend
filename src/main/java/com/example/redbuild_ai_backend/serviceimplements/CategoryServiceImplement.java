@@ -53,4 +53,14 @@ public class CategoryServiceImplement implements ICategoryService {
     public void update(Category cat) {
         cP.save(cat);
     }
+
+    @Override
+    public List<Category> buscarPorEstado(String estado) {
+        return cP.buscarPorEstado(estado);
+    }
+
+    @Override
+    public List<Object[]> contarProductosPorCategoria() {
+        return cP.contarProductosPorCategoria();
+    }
 }

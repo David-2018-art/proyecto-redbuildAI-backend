@@ -2,6 +2,7 @@ package com.example.redbuild_ai_backend.controllers;
 
 
 import com.example.redbuild_ai_backend.dtos.CategoryDTO;
+import com.example.redbuild_ai_backend.dtos.CategoryProductCountDTO;
 import com.example.redbuild_ai_backend.entities.Category;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ICategoryService;
@@ -99,5 +100,53 @@ public class CategoryController {
         return ResponseEntity.ok(
                 "Categoria eliminada correctamente"
         );
+    }
+
+
+    @GetMapping("/estado")
+    public ResponseEntity<List<CategoryDTO>>buscarPorEstado(@RequestParam("estado") String estado){
+        if (!"Activo".equals(estado) && !"Inactivo".equals(estado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El estado debe ser Activo o Inactivo"
+            );
+        }
+
+        List<CategoryDTO> lista = cS.buscarPorEstado(estado)
+                .stream()
+                .map(category ->
+                        modelMapper.map(category, CategoryDTO.class)
+                )
+                .toList();
+
+        return ResponseEntity.ok(lista);
+    }
+
+    @GetMapping("/cantidad-productos")
+    public ResponseEntity<List<CategoryProductCountDTO>> contarProductosPorCategoria(){
+        List<CategoryProductCountDTO> lista =
+                cS.contarProductosPorCategoria()
+                        .stream()
+                        .map(fila -> {
+                            CategoryProductCountDTO dto =
+                                    new CategoryProductCountDTO();
+
+                            dto.setIdCategory(
+                                    ((Number) fila[0]).longValue()
+                            );
+
+                            dto.setNameCategory(
+                                    (String) fila[1]
+                            );
+
+                            dto.setQuantityProducts(
+                                    ((Number) fila[2]).longValue()
+                            );
+
+                            return dto;
+                        })
+                        .toList();
+
+        return ResponseEntity.ok(lista);
     }
 }
