@@ -2,6 +2,7 @@ package com.example.redbuild_ai_backend.entities;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,33 +25,37 @@ public class Product {
     private String colour;
 
     @Column(name = "statusMaterial",length = 30,nullable = false)
-    private boolean statusMaterial;
+    private String statusMaterial;
 
     @Column(name = "quantityProduct",nullable = false)
-    private double quantityProduct;
+    private BigDecimal quantityProduct;
 
     @Column(name = "unidadMedidaProduct",length = 30,nullable = false)
     private String unidadMedidaProduct;
 
     @Column(name = "priceProduct", nullable = false)
-    private double priceProduct;
+    private BigDecimal priceProduct;
 
     @Column(name = "dateRegisterProduct", nullable = false)
     private LocalDateTime dateRegisterProduct;
 
     @Column(name = "statusProduct",length = 20,nullable = false)
-    private boolean statusProduct;
+        private String statusProduct;
 
     @ManyToOne
     @JoinColumn(name = "IdCategory",nullable = false)
     private Category category;
+
+    @ManyToOne
+    @JoinColumn(name = "IdUser", nullable = false)
+    private User user;
 
 
 
     public Product() {
     }
 
-    public Product(Long idProduct, String nameProduct, String descriptionProduct, String material, String colour, boolean statusMaterial, double quantityProduct, String unidadMedidaProduct, double priceProduct, LocalDateTime dateRegisterProduct, boolean statusProduct, Category category) {
+    public Product(Long idProduct, String nameProduct, String descriptionProduct, String material, String colour, String statusMaterial, BigDecimal quantityProduct, String unidadMedidaProduct, BigDecimal priceProduct, LocalDateTime dateRegisterProduct, String statusProduct, Category category, User user) {
         IdProduct = idProduct;
         this.nameProduct = nameProduct;
         this.descriptionProduct = descriptionProduct;
@@ -63,6 +68,7 @@ public class Product {
         this.dateRegisterProduct = dateRegisterProduct;
         this.statusProduct = statusProduct;
         this.category = category;
+        this.user = user;
     }
 
     public Long getIdProduct() {
@@ -105,19 +111,19 @@ public class Product {
         this.colour = colour;
     }
 
-    public boolean isStatusMaterial() {
+    public String getStatusMaterial() {
         return statusMaterial;
     }
 
-    public void setStatusMaterial(boolean statusMaterial) {
+    public void setStatusMaterial(String statusMaterial) {
         this.statusMaterial = statusMaterial;
     }
 
-    public double getQuantityProduct() {
+    public BigDecimal getQuantityProduct() {
         return quantityProduct;
     }
 
-    public void setQuantityProduct(double quantityProduct) {
+    public void setQuantityProduct(BigDecimal quantityProduct) {
         this.quantityProduct = quantityProduct;
     }
 
@@ -129,11 +135,11 @@ public class Product {
         this.unidadMedidaProduct = unidadMedidaProduct;
     }
 
-    public double getPriceProduct() {
+    public BigDecimal getPriceProduct() {
         return priceProduct;
     }
 
-    public void setPriceProduct(double priceProduct) {
+    public void setPriceProduct(BigDecimal priceProduct) {
         this.priceProduct = priceProduct;
     }
 
@@ -145,11 +151,11 @@ public class Product {
         this.dateRegisterProduct = dateRegisterProduct;
     }
 
-    public boolean isStatusProduct() {
+    public String getStatusProduct() {
         return statusProduct;
     }
 
-    public void setStatusProduct(boolean statusProduct) {
+    public void setStatusProduct(String statusProduct) {
         this.statusProduct = statusProduct;
     }
 
@@ -159,5 +165,13 @@ public class Product {
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

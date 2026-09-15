@@ -2,8 +2,11 @@ package com.example.redbuild_ai_backend.serviceimplements;
 
 import com.example.redbuild_ai_backend.entities.Category;
 import com.example.redbuild_ai_backend.repositories.ICategoryRepository;
+import com.example.redbuild_ai_backend.repositories.IProductRepository;
 import com.example.redbuild_ai_backend.serviceinterfaces.ICategoryService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +14,11 @@ import java.util.Optional;
 @Service
 public class CategoryServiceImplement implements ICategoryService {
     private final ICategoryRepository cP;
+    private final IProductRepository pR;
 
-    public CategoryServiceImplement(ICategoryRepository cP) {
+    public CategoryServiceImplement(ICategoryRepository cP, IProductRepository pR) {
         this.cP = cP;
+        this.pR = pR;
     }
 
     @Override
@@ -28,6 +33,13 @@ public class CategoryServiceImplement implements ICategoryService {
 
     @Override
     public void delete(Long id) {
+        if (pR.existsByCategory_IdCategory(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la categoria porque tiene productos asociados"
+            );
+        }
+
         cP.deleteById(id);
 
     }

@@ -88,10 +88,16 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id){
-        Category category=cS.listId(id)
-                .orElseThrow(()->new ResourceNotFoundException("No se encuentra la categoria con ID: " + id));
+    public ResponseEntity<String> eliminar(@PathVariable Long id) {
+        Category category = cS.listId(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe la categoria con ID: " + id
+                ));
+
         cS.delete(category.getIdCategory());
-        return ResponseEntity.ok("Categoria eliminada correctamente");
+
+        return ResponseEntity.ok(
+                "Categoria eliminada correctamente"
+        );
     }
 }
