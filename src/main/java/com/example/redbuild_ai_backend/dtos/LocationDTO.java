@@ -1,21 +1,36 @@
 package com.example.redbuild_ai_backend.dtos;
 
-import jakarta.persistence.Column;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 
 public class LocationDTO {
     private Long idLocation;
+    @NotBlank(message = "El departamento es obligatorio")
     private String department;
+
+    @NotBlank(message = "La provincia es obligatoria.")
     private String province;
+
+    @NotBlank(message = "El distrito es obligatorio.")
     private String district;
+
     private String referenceAddress;
-    private double latitude;
-    private double longitude;
+
+    @DecimalMin(value = "-90.0",message = "La latitud no puede ser menor a -90")
+    @DecimalMax(value = "90.0", message = "La latitud no puede ser mayor a 90")
+    private Double latitude;
+
+    @DecimalMin(value = "-180.0",message = "La longitud no puede ser menor a -180")
+    @DecimalMax(value = "180.0", message = "La longitud no puede ser mayor a 180")
+    private Double longitude;
+
 
     public LocationDTO() {
 
     }
 
-    public LocationDTO(Long idLocation, String department, String province, String district, String referenceAddress, double latitude, double longitude) {
+    public LocationDTO(Long idLocation, String department, String province, String district, String referenceAddress, Double latitude, Double longitude) {
         this.idLocation = idLocation;
         this.department = department;
         this.province = province;
@@ -65,19 +80,19 @@ public class LocationDTO {
         this.referenceAddress = referenceAddress;
     }
 
-    public double getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public double getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 }
