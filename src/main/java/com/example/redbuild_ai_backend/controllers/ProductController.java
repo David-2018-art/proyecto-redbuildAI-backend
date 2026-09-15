@@ -4,9 +4,11 @@ package com.example.redbuild_ai_backend.controllers;
 import com.example.redbuild_ai_backend.dtos.ProductDTO;
 import com.example.redbuild_ai_backend.entities.Category;
 import com.example.redbuild_ai_backend.entities.Product;
+import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ICategoryService;
 import com.example.redbuild_ai_backend.serviceinterfaces.IProductService;
+import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -25,20 +27,34 @@ import java.util.Optional;
 public class ProductController {
     private final IProductService pS;
     private final ICategoryService cS;
+    private final IUserService uS;
     private final ModelMapper modelMapper;
 
-
-    public ProductController(IProductService pS, ICategoryService cS, ModelMapper modelMapper) {
+    public ProductController(IProductService pS, ICategoryService cS, IUserService uS, ModelMapper modelMapper) {
         this.pS = pS;
         this.cS = cS;
+        this.uS = uS;
         this.modelMapper = modelMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<ProductDTO>>listar(){
-        List<ProductDTO>lista=pS.list()
+        List<ProductDTO> lista = pS.list()
                 .stream()
-                .map(product -> modelMapper.map(product, ProductDTO.class))
+                .map(product -> {
+                    ProductDTO dto =
+                            modelMapper.map(product, ProductDTO.class);
+
+                    dto.setIdCategory(
+                            product.getCategory().getIdCategory()
+                    );
+
+                    dto.setIdUser(
+                            product.getUser().getIdUser()
+                    );
+
+                    return dto;
+                })
                 .toList();
 
         return ResponseEntity.ok(lista);
@@ -51,11 +67,17 @@ public class ProductController {
         Category category=cS.listId(dto.getIdCategory())
                 .orElseThrow(()->new ResourceNotFoundException("No existe la categoria con ID: " + dto.getIdCategory()));
 
+        User user = uS.listId(dto.getIdUser())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe el usuario con ID: " + dto.getIdUser()
+                ));
+
                 Product product=modelMapper.map(dto, Product.class);
 
                 product.setIdProduct(null);
                 product.setDateRegisterProduct(LocalDateTime.now());
                 product.setCategory(category);
+                product.setUser(user);
 
 
                 pS.insert(product);
@@ -93,6 +115,10 @@ public class ProductController {
                 product.getCategory().getIdCategory()
         );
 
+        dto.setIdUser(
+                product.getUser().getIdUser()
+        );
+
         return ResponseEntity.ok(dto);
     }
 
@@ -105,38 +131,33 @@ public class ProductController {
             );
         }
 
-        Optional<Product> existente =
-                pS.listId(dto.getIdProduct());
+        Product product = pS.listId(dto.getIdProduct())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe el producto con ID: " + dto.getIdProduct()
+                ));
 
-        if (existente.isEmpty()) {
-            throw new ResourceNotFoundException(
-                    "No existe el producto con ID: "
-                            + dto.getIdProduct()
+        Category category = cS.listId(dto.getIdCategory())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe la categoria con ID: " + dto.getIdCategory()
+                ));
+
+        if (!product.getUser().getIdUser().equals(dto.getIdUser())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se permite cambiar el propietario del producto"
             );
         }
-
-        Optional<Category> category =
-                cS.listId(dto.getIdCategory());
-
-        if (category.isEmpty()) {
-            throw new ResourceNotFoundException(
-                    "No existe la categoria con ID: "
-                            + dto.getIdCategory()
-            );
-        }
-
-        Product product = existente.get();
 
         product.setNameProduct(dto.getNameProduct());
         product.setDescriptionProduct(dto.getDescriptionProduct());
         product.setMaterial(dto.getMaterial());
         product.setColour(dto.getColour());
-        product.setStatusMaterial(dto.isStatusMaterial());
+        product.setStatusMaterial(dto.getStatusMaterial());
         product.setQuantityProduct(dto.getQuantityProduct());
         product.setUnidadMedidaProduct(dto.getUnidadMedidaProduct());
         product.setPriceProduct(dto.getPriceProduct());
-        product.setStatusProduct(dto.isStatusProduct());
-        product.setCategory(category.get());
+        product.setStatusProduct(dto.getStatusProduct());
+        product.setCategory(category);
 
         pS.update(product);
 
@@ -147,17 +168,26 @@ public class ProductController {
                 product.getCategory().getIdCategory()
         );
 
+        responseDTO.setIdUser(
+                product.getUser().getIdUser()
+        );
+
         return ResponseEntity.ok(responseDTO);
 
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String>eliminar(@PathVariable Long id){
-        Product product=pS.listId(id)
-                .orElseThrow(()->new ResourceNotFoundException("No existe el producto con ID: " + id));
+        Product product = pS.listId(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe el producto con ID: " + id
+                ));
 
         pS.delete(product.getIdProduct());
-        return ResponseEntity.ok("Producto eliminado correctamente");
+
+        return ResponseEntity.ok(
+                "Producto eliminado correctamente"
+        );
     }
 
 
