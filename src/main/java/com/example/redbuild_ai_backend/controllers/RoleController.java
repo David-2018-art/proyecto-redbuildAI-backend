@@ -64,6 +64,15 @@ public class RoleController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/estados")
+    public ResponseEntity<List<RoleDTO>> buscarPorEstado(@RequestParam String status){
+        List<RoleDTO> lista = rS.listByStatus(status)
+                .stream()
+                .map(role -> modelMapper.map(role, RoleDTO.class))
+                .toList();
+        return ResponseEntity.ok(lista);
+    }
+
     @PutMapping
     public ResponseEntity<RoleDTO> actualizar(@Valid @RequestBody RoleDTO dto){
         if(dto.getIdRole()==null){
