@@ -90,6 +90,19 @@ public class UserController {
         return ResponseEntity.ok(lista);
     }
 
+    @GetMapping("/por-rol")
+    public ResponseEntity<List<UserDTO>> buscarPorNombreDeRol(@RequestParam String nameRole){
+        List<UserDTO> lista = uS.listByRoleName(nameRole)
+                .stream()
+                .map(u -> {
+                    UserDTO dto = modelMapper.map(u, UserDTO.class);
+                    dto.setIdRole(u.getRole().getIdRole());
+                    return dto;
+                })
+                .toList();
+        return ResponseEntity.ok(lista);
+    }
+
 
     @PutMapping
     public ResponseEntity<UserDTO> actualizar(@Valid @RequestBody UserDTO dto){
