@@ -49,4 +49,9 @@ public class RoleServiceImplement implements IRoleService {
     public void update(Role role) {
         rR.save(role);
     }
+
+    @Override
+    public List<Role> listByStatus(String statusRole) {
+        return rR.findByStatusRole(statusRole);
+    }
 }

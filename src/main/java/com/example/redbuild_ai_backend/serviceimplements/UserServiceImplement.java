@@ -47,8 +47,4 @@ public class UserServiceImplement implements IUserService {
         return uR.findByStatusUser(statusUser);
     }
 
-    @Override
-    public List<Object[]> getCountUsersByRole() {
-        return uR.getCountUsersByRole();
-    }
 }

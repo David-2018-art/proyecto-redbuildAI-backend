@@ -2,7 +2,6 @@ package com.example.redbuild_ai_backend.controllers;
 
 
 import com.example.redbuild_ai_backend.dtos.UserDTO;
-import com.example.redbuild_ai_backend.dtos.UserQuantityDTO;
 import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
@@ -91,19 +90,6 @@ public class UserController {
         return ResponseEntity.ok(lista);
     }
 
-    @GetMapping("/cantidades")
-    public ResponseEntity<List<UserQuantityDTO>> contarPorRol(){
-        List<UserQuantityDTO> lista = uS.getCountUsersByRole()
-                .stream()
-                .map(item -> {
-                    UserQuantityDTO dto = new UserQuantityDTO();
-                    dto.setName((String) item[0]);
-                    dto.setQuantity(((Number) item[1]).doubleValue());
-                    return dto;
-                })
-                .toList();
-        return ResponseEntity.ok(lista);
-    }
 
     @PutMapping
     public ResponseEntity<UserDTO> actualizar(@Valid @RequestBody UserDTO dto){
