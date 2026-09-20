@@ -14,4 +14,6 @@ public interface IUserService {
     public void delete(Long id);
     public Optional<User> listId(Long id);
     public void update(User user);
+    public List<User> listByStatus(String statusUser);
+    public List<Object[]> getCountUsersByRole();
 }

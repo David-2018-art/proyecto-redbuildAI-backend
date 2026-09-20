@@ -41,4 +41,14 @@ public class UserServiceImplement implements IUserService {
     public void update(User user) {
         uR.save(user);
     }
+
+    @Override
+    public List<User> listByStatus(String statusUser) {
+        return uR.findByStatusUser(statusUser);
+    }
+
+    @Override
+    public List<Object[]> getCountUsersByRole() {
+        return uR.getCountUsersByRole();
+    }
 }
