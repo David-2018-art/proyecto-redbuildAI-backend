@@ -11,9 +11,11 @@ import com.example.redbuild_ai_backend.serviceinterfaces.IRoleService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.util.List;
@@ -33,6 +35,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<List<UserDTO>> listar(){
         List<UserDTO> lista=uS.list()
                 .stream()
@@ -67,17 +70,34 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> buscarId(@PathVariable Long id){
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<UserDTO> buscarId(@PathVariable Long id, Authentication authentication){
         User user = uS.listId(id)
-                .orElseThrow(()->new ResourceNotFoundException("No se encuentra el usuario con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No se encuentra el usuario con ID: " + id));
 
-        UserDTO dto=modelMapper.map(user, UserDTO.class);
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
+
+        boolean esPropietario = user.getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para consultar este usuario"
+            );
+        }
+
+        UserDTO dto = modelMapper.map(user, UserDTO.class);
         dto.setIdRole(user.getRole().getIdRole());
 
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/estados")
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<List<UserDTO>> buscarPorEstado(@RequestParam String status){
         List<UserDTO> lista = uS.listByStatus(status)
                 .stream()
@@ -92,30 +112,61 @@ public class UserController {
 
 
     @PutMapping
-    public ResponseEntity<UserDTO> actualizar(@Valid @RequestBody UserDTO dto){
-        if(dto.getIdUser()==null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El id del usuario es obligatorio para actualizar");
-
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<UserDTO> actualizar(@Valid @RequestBody UserDTO dto,
+                                              Authentication authentication){
+        if (dto.getIdUser() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id del usuario es obligatorio para actualizar"
+            );
         }
 
-        Optional<User>existente=uS.listId(dto.getIdUser());
-        if (existente.isEmpty()){
-            throw new ResourceNotFoundException("No existe un usuario con el ID:" + dto.getIdUser());
-        }
-        Role role = rS.listId(dto.getIdRole())
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el rol con ID: " + dto.getIdRole()));
-        User user=existente.get();
-        user.setRole(role);
+        User user = uS.listId(dto.getIdUser())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe un usuario con el ID: " + dto.getIdUser()
+                ));
 
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
+
+        boolean esPropietario = user.getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para actualizar este usuario"
+            );
+        }
+
+        // Datos que el propio usuario puede modificar
         user.setNameUser(dto.getNameUser());
+        user.setLastNameUser(dto.getLastNameUser());
         user.setEmailUser(dto.getEmailUser());
-        user.setStatusUser(dto.getStatusUser());
+        user.setPhoneUser(dto.getPhoneUser());
+        user.setCompanyNameUser(dto.getCompanyNameUser());
+
+        // Solamente el administrador puede cambiar rol y estado
+        if (esAdministrador) {
+
+            Role role = rS.listId(dto.getIdRole())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "No existe el rol con ID: " + dto.getIdRole()
+                    ));
+
+            user.setRole(role);
+            user.setStatusUser(dto.getStatusUser());
+        }
 
         uS.update(user);
 
-        UserDTO responseDTO=modelMapper.map(user, UserDTO.class);
+        UserDTO responseDTO = modelMapper.map(user, UserDTO.class);
         responseDTO.setIdRole(user.getRole().getIdRole());
+
         return ResponseEntity.ok(responseDTO);
+
     }
 
     @DeleteMapping("/{id}")
