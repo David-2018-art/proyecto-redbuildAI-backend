@@ -2,6 +2,7 @@ package com.example.redbuild_ai_backend.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDateTime;
 
@@ -9,6 +10,7 @@ public class PublicationPhotoDTO {
     private Long idPhoto;
 
     @NotBlank(message = "La URL de la foto es obligatoria")
+    @URL(message = "La URL de la foto debe tener un formato válido")
     private String urlPhoto;
 
     private String descriptionPhoto;
