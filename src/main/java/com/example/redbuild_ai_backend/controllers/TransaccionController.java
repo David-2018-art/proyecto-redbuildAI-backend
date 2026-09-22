@@ -4,7 +4,9 @@ import com.example.redbuild_ai_backend.dtos.TransaccionDTO;
 import com.example.redbuild_ai_backend.entities.Transaccion;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ITransaccionService;
+import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
 import jakarta.validation.Valid;
+import com.example.redbuild_ai_backend.entities.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +24,12 @@ import java.util.Optional;
 public class TransaccionController {
 
     private final ITransaccionService tS;
+    private final IUserService uS;
     private final ModelMapper modelMapper;
 
-    public TransaccionController(ITransaccionService tS, ModelMapper modelMapper) {
+    public TransaccionController(ITransaccionService tS, IUserService uS, ModelMapper modelMapper) {
         this.tS = tS;
+        this.uS = uS;
         this.modelMapper = modelMapper;
     }
 
@@ -33,7 +37,11 @@ public class TransaccionController {
     public ResponseEntity<List<TransaccionDTO>> listar() {
         List<TransaccionDTO> lista = tS.list()
                 .stream()
-                .map(t -> modelMapper.map(t, TransaccionDTO.class))
+                .map(t -> {
+                    TransaccionDTO dto = modelMapper.map(t, TransaccionDTO.class);
+                    dto.setIdUser(t.getUser().getIdUser());
+                    return dto;
+                })
                 .toList();
 
         return ResponseEntity.ok(lista);
@@ -45,9 +53,15 @@ public class TransaccionController {
         transaccion.setIdTransaccion(null);
         transaccion.setDateRegisterTransaction(LocalDateTime.now());
 
+        // Asociar usuario (se requiere dto.idUser)
+        User user = uS.listId(dto.getIdUser())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con ID: " + dto.getIdUser()));
+        transaccion.setUser(user);
+
         tS.insert(transaccion);
 
         TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
+        responseDTO.setIdUser(transaccion.getUser().getIdUser());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -66,6 +80,7 @@ public class TransaccionController {
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la transacción con ID: " + id));
 
         TransaccionDTO dto = modelMapper.map(transaccion, TransaccionDTO.class);
+        dto.setIdUser(transaccion.getUser().getIdUser());
         return ResponseEntity.ok(dto);
     }
 
@@ -81,6 +96,14 @@ public class TransaccionController {
         }
 
         Transaccion transaccion = existente.get();
+        // No permitir cambiar propietario (idUser)
+        if (!transaccion.getUser().getIdUser().equals(dto.getIdUser())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se permite cambiar el propietario de la transacción"
+            );
+        }
+
         transaccion.setTypeTransaction(dto.getTypeTransaction());
         transaccion.setAmountTransaction(dto.getAmountTransaction());
         transaccion.setDescriptionTransaction(dto.getDescriptionTransaction());
@@ -90,6 +113,7 @@ public class TransaccionController {
         tS.update(transaccion);
 
         TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
+        responseDTO.setIdUser(transaccion.getUser().getIdUser());
         return ResponseEntity.ok(responseDTO);
     }
 

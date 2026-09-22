@@ -4,7 +4,9 @@ import com.example.redbuild_ai_backend.dtos.ResenaDTO;
 import com.example.redbuild_ai_backend.entities.Resena;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.IResenaService;
+import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
 import jakarta.validation.Valid;
+import com.example.redbuild_ai_backend.entities.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +24,12 @@ import java.util.Optional;
 public class ResenaController {
 
     private final IResenaService rS;
+    private final IUserService uS;
     private final ModelMapper modelMapper;
 
-    public ResenaController(IResenaService rS, ModelMapper modelMapper) {
+    public ResenaController(IResenaService rS, IUserService uS, ModelMapper modelMapper) {
         this.rS = rS;
+        this.uS = uS;
         this.modelMapper = modelMapper;
     }
 
@@ -33,7 +37,11 @@ public class ResenaController {
     public ResponseEntity<List<ResenaDTO>> listar() {
         List<ResenaDTO> lista = rS.list()
                 .stream()
-                .map(r -> modelMapper.map(r, ResenaDTO.class))
+                .map(r -> {
+                    ResenaDTO dto = modelMapper.map(r, ResenaDTO.class);
+                    dto.setIdUser(r.getUser().getIdUser());
+                    return dto;
+                })
                 .toList();
 
         return ResponseEntity.ok(lista);
@@ -45,9 +53,16 @@ public class ResenaController {
         resena.setIdResena(null);
         resena.setDateRegisterResena(LocalDateTime.now());
 
+        // Asociar usuario (se requiere dto.idUser)
+        User user = uS.listId(dto.getIdUser())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con ID: " + dto.getIdUser()));
+        resena.setUser(user);
+
         rS.insert(resena);
 
+
         ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
+        responseDTO.setIdUser(resena.getUser().getIdUser());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -66,6 +81,7 @@ public class ResenaController {
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la reseña con ID: " + id));
 
         ResenaDTO dto = modelMapper.map(resena, ResenaDTO.class);
+        dto.setIdUser(resena.getUser().getIdUser());
         return ResponseEntity.ok(dto);
     }
 
@@ -81,6 +97,14 @@ public class ResenaController {
         }
 
         Resena resena = existente.get();
+        // No permitir cambiar propietario (idUser)
+        if (!resena.getUser().getIdUser().equals(dto.getIdUser())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se permite cambiar el propietario de la reseña"
+            );
+        }
+
         resena.setTitleResena(dto.getTitleResena());
         resena.setDescriptionResena(dto.getDescriptionResena());
         resena.setScoreResena(dto.getScoreResena());
@@ -89,6 +113,7 @@ public class ResenaController {
         rS.update(resena);
 
         ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
+        responseDTO.setIdUser(resena.getUser().getIdUser());
         return ResponseEntity.ok(responseDTO);
     }
 
