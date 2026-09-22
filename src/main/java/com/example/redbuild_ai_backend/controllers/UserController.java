@@ -2,6 +2,7 @@ package com.example.redbuild_ai_backend.controllers;
 
 
 import com.example.redbuild_ai_backend.dtos.UserDTO;
+import com.example.redbuild_ai_backend.dtos.UserRegisterDTO;
 import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
@@ -46,27 +47,6 @@ public class UserController {
                 })
                 .toList();
         return ResponseEntity.ok(lista);
-    }
-
-    @PostMapping
-    public ResponseEntity<UserDTO> registrar(@Valid @RequestBody UserDTO dto){
-        Role role = rS.listId(dto.getIdRole())
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el rol con ID: " + dto.getIdRole()));
-        User user=modelMapper.map(dto,User.class);
-        user.setRole(role);
-        user.setIdUser(null);
-        uS.insert(user);
-
-        UserDTO responseDTO= modelMapper.map(user,UserDTO.class);
-        responseDTO.setIdRole(user.getRole().getIdRole());
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(user.getIdUser())
-                .toUri();
-        return ResponseEntity
-                .created(location)
-                .body(responseDTO);
     }
 
     @GetMapping("/{id}")
@@ -170,10 +150,60 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<String> eliminar(@PathVariable Long id){
         User user=uS.listId(id)
                 .orElseThrow(()->new ResourceNotFoundException("No se encuentra el usuario con ID: " + id));
         uS.delete(user.getIdUser());
         return ResponseEntity.ok("Usuario eliminado correctamente");
+    }
+
+    @PostMapping
+    public ResponseEntity<UserDTO> registrar(
+            @Valid @RequestBody UserRegisterDTO dto) {
+
+        // El servidor elige el rol de las cuentas nuevas.
+        Role role = rS.buscarPorNombre("Usuario")
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No está configurado el rol Usuario"
+                ));
+
+        if (!"Activo".equals(role.getStatusRole())) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "El registro de usuarios no está disponible"
+            );
+        }
+
+        User user = new User();
+
+        user.setNameUser(dto.getNameUser());
+        user.setLastNameUser(dto.getLastNameUser());
+        user.setEmailUser(dto.getEmailUser());
+        user.setPasswordUser(dto.getPasswordUser());
+        user.setPhoneUser(dto.getPhoneUser());
+        user.setCompanyNameUser(dto.getCompanyNameUser());
+
+
+        user.setIdUser(null);
+        user.setRole(role);
+        user.setStatusUser("Activo");
+
+
+        uS.insert(user);
+
+        UserDTO responseDTO = modelMapper.map(user, UserDTO.class);
+        responseDTO.setIdRole(user.getRole().getIdRole());
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(user.getIdUser())
+                .toUri();
+
+        return ResponseEntity
+                .created(location)
+                .body(responseDTO);
     }
 }
