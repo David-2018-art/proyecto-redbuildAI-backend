@@ -16,11 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/Products")
@@ -38,6 +39,7 @@ public class ProductController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<ProductDTO>>listar(){
         List<ProductDTO> lista = pS.list()
                 .stream()
@@ -62,30 +64,57 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductDTO>registrar(@Valid @RequestBody ProductDTO dto){
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<ProductDTO> registrar(
+            @Valid @RequestBody ProductDTO dto,
+            Authentication authentication) {
 
-        Category category=cS.listId(dto.getIdCategory())
-                .orElseThrow(()->new ResourceNotFoundException("No existe la categoria con ID: " + dto.getIdCategory()));
+        Category category = cS.listId(dto.getIdCategory())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe la categoria con ID: "
+                                + dto.getIdCategory()
+                ));
 
         User user = uS.listId(dto.getIdUser())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No existe el usuario con ID: " + dto.getIdUser()
+                        "No existe el usuario con ID: "
+                                + dto.getIdUser()
                 ));
 
-                Product product=modelMapper.map(dto, Product.class);
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority().equals("Administrador")
+                );
 
-                product.setIdProduct(null);
-                product.setDateRegisterProduct(LocalDateTime.now());
-                product.setCategory(category);
-                product.setUser(user);
+        boolean esPropietario = user.getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
 
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No puedes registrar productos para otro usuario"
+            );
+        }
 
-                pS.insert(product);
+        Product product = modelMapper.map(dto, Product.class);
+
+        product.setIdProduct(null);
+        product.setDateRegisterProduct(LocalDateTime.now());
+        product.setCategory(category);
+        product.setUser(user);
+
+        pS.insert(product);
+
         ProductDTO responseDTO =
                 modelMapper.map(product, ProductDTO.class);
 
         responseDTO.setIdCategory(
                 product.getCategory().getIdCategory()
+        );
+
+        responseDTO.setIdUser(
+                product.getUser().getIdUser()
         );
 
         URI location = ServletUriComponentsBuilder
@@ -100,6 +129,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<ProductDTO> buscarId(
             @PathVariable("id") Long id) {
 
@@ -123,7 +153,8 @@ public class ProductController {
     }
 
     @PutMapping
-    public ResponseEntity<ProductDTO>actualizar(@Valid @RequestBody ProductDTO dto){
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<ProductDTO>actualizar(@Valid @RequestBody ProductDTO dto, Authentication  authentication) {
         if (dto.getIdProduct() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -135,6 +166,20 @@ public class ProductController {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No existe el producto con ID: " + dto.getIdProduct()
                 ));
+
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
+
+        boolean esPropietario = product.getUser().getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para actualizar este producto"
+            );
+        }
 
         Category category = cS.listId(dto.getIdCategory())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -177,11 +222,32 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String>eliminar(@PathVariable Long id){
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<String> eliminar(
+            @PathVariable Long id,
+            Authentication authentication) {
+
         Product product = pS.listId(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No existe el producto con ID: " + id
                 ));
+
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority().equals("Administrador")
+                );
+
+        boolean esPropietario = product.getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para eliminar este producto"
+            );
+        }
 
         pS.delete(product.getIdProduct());
 

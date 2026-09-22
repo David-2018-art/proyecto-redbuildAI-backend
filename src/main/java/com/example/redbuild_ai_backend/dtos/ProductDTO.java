@@ -3,13 +3,15 @@ package com.example.redbuild_ai_backend.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class ProductDTO {
 
-    private Long IdProduct;
+    @JsonProperty("idProduct")
+    private Long idProduct;
     @NotBlank(message = "el nombre del producto es obligatorio.")
     private String nameProduct;
     @NotBlank(message = "la descripcion del producto es obligatorio.")
@@ -37,12 +39,13 @@ public class ProductDTO {
     public ProductDTO() {
     }
 
+
     public Long getIdProduct() {
-        return IdProduct;
+        return idProduct;
     }
 
     public void setIdProduct(Long idProduct) {
-        IdProduct = idProduct;
+        this.idProduct = idProduct;
     }
 
     public String getNameProduct() {
