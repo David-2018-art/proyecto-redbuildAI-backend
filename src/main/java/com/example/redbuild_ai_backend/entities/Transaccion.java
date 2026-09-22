@@ -30,6 +30,11 @@ public class Transaccion {
     @Column(name = "statusTransaction", nullable = false)
     private boolean statusTransaction;
 
+    // Relación con usuario: la transacción pertenece a un usuario (FK id_user)
+    @ManyToOne
+    @JoinColumn(name = "id_user", nullable = false)
+    private User user;
+
     public Transaccion() {
     }
 
@@ -98,4 +103,13 @@ public class Transaccion {
     public void setStatusTransaction(boolean statusTransaction) {
         this.statusTransaction = statusTransaction;
     }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }
+
