@@ -11,4 +11,6 @@ public interface ILocationService {
     public void delete(Long id);
     public Optional<Location> listId(Long id);
     public void update(Location loc);
+
+    public List<Location> findByDepartment(String department);
 }
