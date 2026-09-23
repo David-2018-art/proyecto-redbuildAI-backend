@@ -23,6 +23,9 @@ public class ResenaDTO {
     @NotNull(message = "el estado de la reseña es obligatorio.")
     private boolean statusResena;
 
+    // id del usuario que creó la reseña
+    private Long idUser;
+
     public ResenaDTO() {
     }
 
@@ -73,4 +76,13 @@ public class ResenaDTO {
     public void setStatusResena(boolean statusResena) {
         this.statusResena = statusResena;
     }
+
+    public Long getIdUser() {
+        return idUser;
+    }
+
+    public void setIdUser(Long idUser) {
+        this.idUser = idUser;
+    }
 }
+

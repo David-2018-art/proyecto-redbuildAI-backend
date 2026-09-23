@@ -26,6 +26,9 @@ public class TransaccionDTO {
     @NotNull(message = "el estado de la transacción es obligatorio.")
     private boolean statusTransaction;
 
+    // id del usuario que realizó la transacción
+    private Long idUser;
+
     public TransaccionDTO() {
     }
 
@@ -84,4 +87,13 @@ public class TransaccionDTO {
     public void setStatusTransaction(boolean statusTransaction) {
         this.statusTransaction = statusTransaction;
     }
+
+    public Long getIdUser() {
+        return idUser;
+    }
+
+    public void setIdUser(Long idUser) {
+        this.idUser = idUser;
+    }
 }
+

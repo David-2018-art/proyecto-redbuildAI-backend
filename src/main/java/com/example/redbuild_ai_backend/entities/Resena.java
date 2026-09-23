@@ -27,6 +27,11 @@ public class Resena {
     @Column(name = "statusResena", nullable = false)
     private boolean statusResena;
 
+    // Relación con usuario: la reseña pertenece a un usuario (FK id_user)
+    @ManyToOne
+    @JoinColumn(name = "id_user", nullable = false)
+    private User user;
+
     public Resena() {
     }
 
@@ -86,4 +91,13 @@ public class Resena {
     public void setStatusResena(boolean statusResena) {
         this.statusResena = statusResena;
     }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }
+
