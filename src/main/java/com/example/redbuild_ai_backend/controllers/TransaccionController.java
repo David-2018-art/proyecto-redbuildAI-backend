@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -34,6 +36,7 @@ public class TransaccionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<List<TransaccionDTO>> listar() {
         List<TransaccionDTO> lista = tS.list()
                 .stream()
@@ -48,25 +51,66 @@ public class TransaccionController {
     }
 
     @PostMapping
-    public ResponseEntity<TransaccionDTO> registrar(@Valid @RequestBody TransaccionDTO dto) {
-        Transaccion transaccion = modelMapper.map(dto, Transaccion.class);
-        transaccion.setIdTransaccion(null);
-        transaccion.setDateRegisterTransaction(LocalDateTime.now());
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<TransaccionDTO> registrar(
+            @Valid @RequestBody TransaccionDTO dto,
+            Authentication authentication) {
 
-        // Asociar usuario (se requiere dto.idUser)
         User user = uS.listId(dto.getIdUser())
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con ID: " + dto.getIdUser()));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe el usuario con ID: "
+                                        + dto.getIdUser()
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = user.getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No puedes registrar transacciones para otro usuario"
+            );
+        }
+
+        Transaccion transaccion =
+                modelMapper.map(dto, Transaccion.class);
+
+        transaccion.setIdTransaccion(null);
+        transaccion.setDateRegisterTransaction(
+                LocalDateTime.now()
+        );
         transaccion.setUser(user);
 
         tS.insert(transaccion);
 
-        TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
-        responseDTO.setIdUser(transaccion.getUser().getIdUser());
+        TransaccionDTO responseDTO =
+                modelMapper.map(
+                        transaccion,
+                        TransaccionDTO.class
+                );
+
+        responseDTO.setIdUser(
+                transaccion.getUser().getIdUser()
+        );
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(transaccion.getIdTransaccion())
+                .buildAndExpand(
+                        transaccion.getIdTransaccion()
+                )
                 .toUri();
 
         return ResponseEntity
@@ -75,54 +119,185 @@ public class TransaccionController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TransaccionDTO> buscarId(@PathVariable Long id) {
-        Transaccion transaccion = tS.listId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No existe la transacción con ID: " + id));
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<TransaccionDTO> buscarId(
+            @PathVariable Long id,
+            Authentication authentication) {
 
-        TransaccionDTO dto = modelMapper.map(transaccion, TransaccionDTO.class);
-        dto.setIdUser(transaccion.getUser().getIdUser());
+        Transaccion transaccion = tS.listId(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe la transacción con ID: " + id
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = transaccion
+                .getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para consultar esta transacción"
+            );
+        }
+
+        TransaccionDTO dto =
+                modelMapper.map(
+                        transaccion,
+                        TransaccionDTO.class
+                );
+
+        dto.setIdUser(
+                transaccion.getUser().getIdUser()
+        );
+
         return ResponseEntity.ok(dto);
     }
 
     @PutMapping
-    public ResponseEntity<TransaccionDTO> actualizar(@Valid @RequestBody TransaccionDTO dto) {
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<TransaccionDTO> actualizar(
+            @Valid @RequestBody TransaccionDTO dto,
+            Authentication authentication) {
+
         if (dto.getIdTransaccion() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El ID de la transacción es obligatorio para actualizar");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El ID de la transacción es obligatorio para actualizar"
+            );
         }
 
-        Optional<Transaccion> existente = tS.listId(dto.getIdTransaccion());
-        if (existente.isEmpty()) {
-            throw new ResourceNotFoundException("No existe la transacción con ID: " + dto.getIdTransaccion());
+        Transaccion transaccion =
+                tS.listId(dto.getIdTransaccion())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "No existe la transacción con ID: "
+                                                + dto.getIdTransaccion()
+                                )
+                        );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = transaccion
+                .getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para actualizar esta transacción"
+            );
         }
 
-        Transaccion transaccion = existente.get();
-        // No permitir cambiar propietario (idUser)
-        if (!transaccion.getUser().getIdUser().equals(dto.getIdUser())) {
+        // No permitir cambiar al propietario
+        if (!transaccion
+                .getUser()
+                .getIdUser()
+                .equals(dto.getIdUser())) {
+
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "No se permite cambiar el propietario de la transacción"
             );
         }
 
-        transaccion.setTypeTransaction(dto.getTypeTransaction());
-        transaccion.setAmountTransaction(dto.getAmountTransaction());
-        transaccion.setDescriptionTransaction(dto.getDescriptionTransaction());
-        transaccion.setPaymentMethod(dto.getPaymentMethod());
-        transaccion.setStatusTransaction(dto.isStatusTransaction());
+        transaccion.setTypeTransaction(
+                dto.getTypeTransaction()
+        );
+
+        transaccion.setAmountTransaction(
+                dto.getAmountTransaction()
+        );
+
+        transaccion.setDescriptionTransaction(
+                dto.getDescriptionTransaction()
+        );
+
+        transaccion.setPaymentMethod(
+                dto.getPaymentMethod()
+        );
+
+        transaccion.setStatusTransaction(
+                dto.isStatusTransaction()
+        );
 
         tS.update(transaccion);
 
-        TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
-        responseDTO.setIdUser(transaccion.getUser().getIdUser());
+        TransaccionDTO responseDTO =
+                modelMapper.map(
+                        transaccion,
+                        TransaccionDTO.class
+                );
+
+        responseDTO.setIdUser(
+                transaccion.getUser().getIdUser()
+        );
+
         return ResponseEntity.ok(responseDTO);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id) {
-        Transaccion transaccion = tS.listId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No existe la transacción con ID: " + id));
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<String> eliminar(
+            @PathVariable Long id,
+            Authentication authentication) {
 
-        tS.delete(transaccion.getIdTransaccion());
-        return ResponseEntity.ok("Transacción eliminada correctamente");
+        Transaccion transaccion = tS.listId(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe la transacción con ID: " + id
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = transaccion
+                .getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para eliminar esta transacción"
+            );
+        }
+
+        tS.delete(
+                transaccion.getIdTransaccion()
+        );
+
+        return ResponseEntity.ok(
+                "Transacción eliminada correctamente"
+        );
     }
 }
