@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -34,6 +36,7 @@ public class ResenaController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<ResenaDTO>> listar() {
         List<ResenaDTO> lista = rS.list()
                 .stream()
@@ -48,21 +51,56 @@ public class ResenaController {
     }
 
     @PostMapping
-    public ResponseEntity<ResenaDTO> registrar(@Valid @RequestBody ResenaDTO dto) {
-        Resena resena = modelMapper.map(dto, Resena.class);
-        resena.setIdResena(null);
-        resena.setDateRegisterResena(LocalDateTime.now());
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<ResenaDTO> registrar(
+            @Valid @RequestBody ResenaDTO dto,
+            Authentication authentication) {
 
-        // Asociar usuario (se requiere dto.idUser)
         User user = uS.listId(dto.getIdUser())
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con ID: " + dto.getIdUser()));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe el usuario con ID: "
+                                        + dto.getIdUser()
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = user.getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No puedes registrar reseñas para otro usuario"
+            );
+        }
+
+        Resena resena =
+                modelMapper.map(dto, Resena.class);
+
+        resena.setIdResena(null);
+        resena.setDateRegisterResena(
+                LocalDateTime.now()
+        );
         resena.setUser(user);
 
         rS.insert(resena);
 
+        ResenaDTO responseDTO =
+                modelMapper.map(resena, ResenaDTO.class);
 
-        ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
-        responseDTO.setIdUser(resena.getUser().getIdUser());
+        responseDTO.setIdUser(
+                resena.getUser().getIdUser()
+        );
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -76,6 +114,7 @@ public class ResenaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<ResenaDTO> buscarId(@PathVariable Long id) {
         Resena resena = rS.listId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la reseña con ID: " + id));
@@ -86,43 +125,123 @@ public class ResenaController {
     }
 
     @PutMapping
-    public ResponseEntity<ResenaDTO> actualizar(@Valid @RequestBody ResenaDTO dto) {
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<ResenaDTO> actualizar(
+            @Valid @RequestBody ResenaDTO dto,
+            Authentication authentication) {
+
         if (dto.getIdResena() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El ID de la reseña es obligatorio para actualizar");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El ID de la reseña es obligatorio para actualizar"
+            );
         }
 
-        Optional<Resena> existente = rS.listId(dto.getIdResena());
-        if (existente.isEmpty()) {
-            throw new ResourceNotFoundException("No existe la reseña con ID: " + dto.getIdResena());
+        Resena resena = rS.listId(dto.getIdResena())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe la reseña con ID: "
+                                        + dto.getIdResena()
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = resena.getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para actualizar esta reseña"
+            );
         }
 
-        Resena resena = existente.get();
-        // No permitir cambiar propietario (idUser)
-        if (!resena.getUser().getIdUser().equals(dto.getIdUser())) {
+        if (!resena.getUser()
+                .getIdUser()
+                .equals(dto.getIdUser())) {
+
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "No se permite cambiar el propietario de la reseña"
             );
         }
 
-        resena.setTitleResena(dto.getTitleResena());
-        resena.setDescriptionResena(dto.getDescriptionResena());
-        resena.setScoreResena(dto.getScoreResena());
-        resena.setStatusResena(dto.isStatusResena());
+        resena.setTitleResena(
+                dto.getTitleResena()
+        );
+
+        resena.setDescriptionResena(
+                dto.getDescriptionResena()
+        );
+
+        resena.setScoreResena(
+                dto.getScoreResena()
+        );
+
+        resena.setStatusResena(
+                dto.isStatusResena()
+        );
 
         rS.update(resena);
 
-        ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
-        responseDTO.setIdUser(resena.getUser().getIdUser());
+        ResenaDTO responseDTO =
+                modelMapper.map(resena, ResenaDTO.class);
+
+        responseDTO.setIdUser(
+                resena.getUser().getIdUser()
+        );
+
         return ResponseEntity.ok(responseDTO);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id) {
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<String> eliminar(
+            @PathVariable Long id,
+            Authentication authentication) {
+
         Resena resena = rS.listId(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No existe la reseña con ID: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe la reseña con ID: " + id
+                        )
+                );
+
+        boolean esAdministrador = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(a ->
+                        a.getAuthority()
+                                .equals("Administrador")
+                );
+
+        boolean esPropietario = resena.getUser()
+                .getEmailUser()
+                .equalsIgnoreCase(
+                        authentication.getName()
+                );
+
+        if (!esAdministrador && !esPropietario) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para eliminar esta reseña"
+            );
+        }
 
         rS.delete(resena.getIdResena());
-        return ResponseEntity.ok("Reseña eliminada correctamente");
+
+        return ResponseEntity.ok(
+                "Reseña eliminada correctamente"
+        );
     }
 }

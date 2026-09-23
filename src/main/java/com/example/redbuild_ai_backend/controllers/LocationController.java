@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.util.List;
@@ -28,6 +29,7 @@ public class LocationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<LocationDTO>> listar(){
         List<LocationDTO> lista=lS.list()
                 .stream()
@@ -37,6 +39,7 @@ public class LocationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<LocationDTO> registrar(@Valid @RequestBody LocationDTO dto){
         Location location = modelMapper.map(dto, Location.class);
         location.setIdLocation(null);
@@ -57,6 +60,7 @@ public class LocationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<LocationDTO> buscarId(@PathVariable Long id){
         Location location = lS.listId(id)
                 .orElseThrow(() ->
@@ -70,6 +74,7 @@ public class LocationController {
     }
 
     @PutMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<LocationDTO> actualizar(@Valid @RequestBody LocationDTO dto){
         if(dto.getIdLocation()==null){
             throw new ResponseStatusException(
@@ -100,6 +105,7 @@ public class LocationController {
         return ResponseEntity.ok(responseDTO);
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<String> eliminar(@PathVariable Long id){
         Location location = lS.listId(id)
                 .orElseThrow(() ->
@@ -112,6 +118,7 @@ public class LocationController {
     }
 
     @GetMapping("/department/{department}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<LocationDTO>> buscarPorDepartamento(
             @PathVariable String department) {
         List<LocationDTO> lista = lS.findByDepartment(department)
