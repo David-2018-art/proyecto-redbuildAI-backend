@@ -31,6 +31,14 @@ public class PublicationPhotoServiceImplement implements IPublicationPhotoServic
     }
 
     @Override
+    public List<PublicationPhotoDTO> getByPublicationId(Long publicationId) {
+        return pR.findByPublicationId(publicationId)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    @Override
     public PublicationPhotoDTO getById(Long id) {
         PublicationPhoto photo = pR.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(

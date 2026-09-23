@@ -23,6 +23,14 @@ public class PublicationPhotoController {
         return ResponseEntity.ok(publicationPhotoService.getAll());
     }
 
+    @GetMapping("/publication/{publicationId}")
+    public ResponseEntity<List<PublicationPhotoDTO>> getByPublicationId(
+            @PathVariable Long publicationId) {
+        return ResponseEntity.ok(
+                publicationPhotoService.getByPublicationId(publicationId)
+        );
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<PublicationPhotoDTO> getById(@PathVariable Long id){
         return ResponseEntity.ok(publicationPhotoService.getById(id));
