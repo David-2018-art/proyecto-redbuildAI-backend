@@ -40,4 +40,9 @@ public class LocationServiceImplement implements ILocationService {
     public void update(Location loc) {
         lR.save(loc);
     }
+
+    @Override
+    public List<Location> findByDepartment(String department){
+        return lR.findByDepartment(department);
+    }
 }

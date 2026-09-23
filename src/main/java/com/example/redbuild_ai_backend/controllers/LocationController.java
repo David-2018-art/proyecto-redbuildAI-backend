@@ -110,4 +110,14 @@ public class LocationController {
         lS.delete(location.getIdLocation());
         return ResponseEntity.ok("Ubicacion eliminada correctamente");
     }
+
+    @GetMapping("/department/{department}")
+    public ResponseEntity<List<LocationDTO>> buscarPorDepartamento(
+            @PathVariable String department) {
+        List<LocationDTO> lista = lS.findByDepartment(department)
+                .stream()
+                .map(l -> modelMapper.map(l, LocationDTO.class))
+                .toList();
+        return ResponseEntity.ok(lista);
+    }
 }
