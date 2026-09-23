@@ -7,6 +7,9 @@ import java.util.List;
 public interface IPublicationService {
 
     List<PublicationDTO> getAll();
+    List<PublicationDTO> findByStatus(String status);
+
+    List<PublicationDTO> findByProductId(Long idProduct);
 
     PublicationDTO getById(Long id);
 

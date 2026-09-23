@@ -40,9 +40,42 @@ public class PublicationServiceImplement
     }
 
     @Override
+    public List<PublicationDTO> findByStatus(String status) {
+
+        log.info(
+                "Buscando publicaciones por estado: {}",
+                status
+        );
+
+        return publicationRepository
+                .findByStatusIgnoreCase(status)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    @Override
+    public List<PublicationDTO> findByProductId(Long idProduct) {
+
+        log.info(
+                "Buscando publicaciones por ID de producto: {}",
+                idProduct
+        );
+
+        return publicationRepository
+                .findByProduct_IdProduct(idProduct)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    @Override
     public PublicationDTO getById(Long id) {
 
-        log.info("Buscando publicación con ID: {}", id);
+        log.info(
+                "Buscando publicación con ID: {}",
+                id
+        );
 
         Publication publication = publicationRepository
                 .findById(id)
