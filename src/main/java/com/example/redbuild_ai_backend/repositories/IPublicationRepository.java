@@ -8,7 +8,9 @@ import java.util.List;
 public interface IPublicationRepository
         extends JpaRepository<Publication, Long> {
 
+    // Buscar publicaciones por estado
     List<Publication> findByStatusIgnoreCase(String status);
 
-    List<Publication> findByProduct_IdProduct(Long IdProduct);
+    // Contar publicaciones asociadas a un producto
+    long countByProduct_IdProduct(Long idProduct);
 }

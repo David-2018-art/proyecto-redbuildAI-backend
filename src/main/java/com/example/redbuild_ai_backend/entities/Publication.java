@@ -21,6 +21,14 @@ public class Publication {
     private Long id;
 
     @Column(nullable = false)
+    private String title;
+
+    private String observations;
+
+    @Column(nullable = false)
+    private String operationType;
+
+    @Column(nullable = false)
     private LocalDateTime publicationDate;
 
     @Column(nullable = false)
@@ -29,4 +37,12 @@ public class Publication {
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "publisher_user_id", nullable = false)
+    private User publisher;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
 }
