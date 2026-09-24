@@ -2,14 +2,14 @@ package com.example.redbuild_ai_backend.controllers;
 
 import com.example.redbuild_ai_backend.dtos.PublicationDTO;
 import com.example.redbuild_ai_backend.serviceinterfaces.IPublicationService;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/publications")
-@Slf4j
 public class PublicationController {
 
     private final IPublicationService publicationService;
@@ -21,65 +21,71 @@ public class PublicationController {
     }
 
     @GetMapping
-    public List<PublicationDTO> getAll() {
+    public ResponseEntity<List<PublicationDTO>> getAll() {
 
-        log.info(
-                "Solicitud GET para obtener publicaciones"
+        return ResponseEntity.ok(
+                publicationService.getAll()
         );
-
-        return publicationService.getAll();
     }
 
     @GetMapping("/{id}")
-    public PublicationDTO getById(
+    public ResponseEntity<PublicationDTO> getById(
             @PathVariable Long id) {
 
-        log.info(
-                "Solicitud GET para obtener publicación con ID: {}",
-                id
+        return ResponseEntity.ok(
+                publicationService.getById(id)
         );
+    }
 
-        return publicationService.getById(id);
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<PublicationDTO>> findByStatus(
+            @PathVariable String status) {
+
+        return ResponseEntity.ok(
+                publicationService.findByStatus(status)
+        );
+    }
+
+    @GetMapping("/product/{idProduct}/count")
+    public ResponseEntity<Long> countByProductId(
+            @PathVariable Long idProduct) {
+
+        return ResponseEntity.ok(
+                publicationService.countByProductId(idProduct)
+        );
     }
 
     @PostMapping
-    public PublicationDTO create(
+    public ResponseEntity<PublicationDTO> create(
             @RequestBody PublicationDTO publicationDTO) {
 
-        log.info(
-                "Solicitud POST para registrar publicación"
-        );
+        PublicationDTO publication =
+                publicationService.create(publicationDTO);
 
-        return publicationService.create(
-                publicationDTO
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(publication);
     }
 
     @PutMapping("/{id}")
-    public PublicationDTO update(
+    public ResponseEntity<PublicationDTO> update(
             @PathVariable Long id,
             @RequestBody PublicationDTO publicationDTO) {
 
-        log.info(
-                "Solicitud PUT para actualizar publicación con ID: {}",
-                id
-        );
-
-        return publicationService.update(
-                id,
-                publicationDTO
+        return ResponseEntity.ok(
+                publicationService.update(
+                        id,
+                        publicationDTO
+                )
         );
     }
 
     @DeleteMapping("/{id}")
-    public void delete(
+    public ResponseEntity<Void> delete(
             @PathVariable Long id) {
 
-        log.warn(
-                "Solicitud DELETE para eliminar publicación con ID: {}",
-                id
-        );
-
         publicationService.delete(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
