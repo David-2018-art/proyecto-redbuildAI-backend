@@ -53,6 +53,22 @@ public class ResenaController {
         return ResponseEntity.ok(lista);
     }
 
+    @Operation(summary = "Listar reseñas por usuario", description = "Obtiene todas las reseñas relacionadas a un usuario específico mediante el query JOIN del repositorio.")
+    @GetMapping("/usuario/{userId}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<List<ResenaDTO>> listarPorUsuario(@PathVariable Long userId) {
+        List<ResenaDTO> lista = rS.findByUserId(userId)
+                .stream()
+                .map(r -> {
+                    ResenaDTO dto = modelMapper.map(r, ResenaDTO.class);
+                    dto.setIdUser(r.getUser().getIdUser());
+                    return dto;
+                })
+                .toList();
+
+        return ResponseEntity.ok(lista);
+    }
+
     @Operation(summary = "Registrar reseña", description = "Crea una reseña asociada a un usuario. Ejemplo de cuerpo: {\"titleResena\":\"Muy buena atención\",\"descriptionResena\":\"El servicio fue rápido y la atención fue excelente.\",\"scoreResena\":5,\"statusResena\":true,\"idUser\":7}")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")

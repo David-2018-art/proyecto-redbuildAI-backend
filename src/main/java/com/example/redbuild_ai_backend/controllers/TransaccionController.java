@@ -53,6 +53,13 @@ public class TransaccionController {
         return ResponseEntity.ok(lista);
     }
 
+    @Operation(summary = "Listar transacciones por usuario", description = "Obtiene todas las transacciones de un usuario específico usando el query JOIN con datos del usuario.")
+    @GetMapping("/usuario/{userId}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<List<com.example.redbuild_ai_backend.dtos.TransaccionUsuarioDTO>> listarPorUsuario(@PathVariable Long userId) {
+        return ResponseEntity.ok(tS.findTransactionsByUserId(userId));
+    }
+
     @Operation(summary = "Registrar transacción", description = "Crea una transacción asociada a un usuario. Ejemplo de cuerpo: {\"typeTransaction\":\"Pago\",\"amountTransaction\":250000,\"descriptionTransaction\":\"Compra de servicio premium\",\"paymentMethod\":\"Tarjeta de crédito\",\"statusTransaction\":true,\"idUser\":7}")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")

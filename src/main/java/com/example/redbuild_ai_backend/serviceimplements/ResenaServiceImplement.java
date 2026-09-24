@@ -28,6 +28,11 @@ public class ResenaServiceImplement implements IResenaService {
     }
 
     @Override
+    public List<Resena> findByUserId(Long userId) {
+        return rR.findByUserId(userId);
+    }
+
+    @Override
     public void delete(Long id) {
         rR.deleteById(id);
     }
