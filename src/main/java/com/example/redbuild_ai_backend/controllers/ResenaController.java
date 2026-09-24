@@ -2,24 +2,23 @@ package com.example.redbuild_ai_backend.controllers;
 
 import com.example.redbuild_ai_backend.dtos.ResenaDTO;
 import com.example.redbuild_ai_backend.entities.Resena;
+import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.IResenaService;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
 import jakarta.validation.Valid;
-import com.example.redbuild_ai_backend.entities.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/Resenas")
@@ -59,23 +58,17 @@ public class ResenaController {
         User user = uS.listId(dto.getIdUser())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No existe el usuario con ID: "
-                                        + dto.getIdUser()
+                                "No existe el usuario con ID: " + dto.getIdUser()
                         )
                 );
 
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = user.getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -84,23 +77,15 @@ public class ResenaController {
             );
         }
 
-        Resena resena =
-                modelMapper.map(dto, Resena.class);
-
+        Resena resena = modelMapper.map(dto, Resena.class);
         resena.setIdResena(null);
-        resena.setDateRegisterResena(
-                LocalDateTime.now()
-        );
+        resena.setDateRegisterResena(LocalDateTime.now());
         resena.setUser(user);
 
         rS.insert(resena);
 
-        ResenaDTO responseDTO =
-                modelMapper.map(resena, ResenaDTO.class);
-
-        responseDTO.setIdUser(
-                resena.getUser().getIdUser()
-        );
+        ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
+        responseDTO.setIdUser(resena.getUser().getIdUser());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -108,9 +93,7 @@ public class ResenaController {
                 .buildAndExpand(resena.getIdResena())
                 .toUri();
 
-        return ResponseEntity
-                .created(location)
-                .body(responseDTO);
+        return ResponseEntity.created(location).body(responseDTO);
     }
 
     @GetMapping("/{id}")
@@ -140,24 +123,18 @@ public class ResenaController {
         Resena resena = rS.listId(dto.getIdResena())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No existe la reseña con ID: "
-                                        + dto.getIdResena()
+                                "No existe la reseña con ID: " + dto.getIdResena()
                         )
                 );
 
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = resena.getUser()
                 .getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -166,40 +143,22 @@ public class ResenaController {
             );
         }
 
-        if (!resena.getUser()
-                .getIdUser()
-                .equals(dto.getIdUser())) {
-
+        if (!resena.getUser().getIdUser().equals(dto.getIdUser())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "No se permite cambiar el propietario de la reseña"
             );
         }
 
-        resena.setTitleResena(
-                dto.getTitleResena()
-        );
-
-        resena.setDescriptionResena(
-                dto.getDescriptionResena()
-        );
-
-        resena.setScoreResena(
-                dto.getScoreResena()
-        );
-
-        resena.setStatusResena(
-                dto.isStatusResena()
-        );
+        resena.setTitleResena(dto.getTitleResena());
+        resena.setDescriptionResena(dto.getDescriptionResena());
+        resena.setScoreResena(dto.getScoreResena());
+        resena.setStatusResena(dto.isStatusResena());
 
         rS.update(resena);
 
-        ResenaDTO responseDTO =
-                modelMapper.map(resena, ResenaDTO.class);
-
-        responseDTO.setIdUser(
-                resena.getUser().getIdUser()
-        );
+        ResenaDTO responseDTO = modelMapper.map(resena, ResenaDTO.class);
+        responseDTO.setIdUser(resena.getUser().getIdUser());
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -220,16 +179,11 @@ public class ResenaController {
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = resena.getUser()
                 .getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -240,8 +194,6 @@ public class ResenaController {
 
         rS.delete(resena.getIdResena());
 
-        return ResponseEntity.ok(
-                "Reseña eliminada correctamente"
-        );
+        return ResponseEntity.ok("Reseña eliminada correctamente");
     }
 }

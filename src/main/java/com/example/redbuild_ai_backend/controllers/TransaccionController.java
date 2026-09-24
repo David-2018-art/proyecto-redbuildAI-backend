@@ -2,24 +2,23 @@ package com.example.redbuild_ai_backend.controllers;
 
 import com.example.redbuild_ai_backend.dtos.TransaccionDTO;
 import com.example.redbuild_ai_backend.entities.Transaccion;
+import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ITransaccionService;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
 import jakarta.validation.Valid;
-import com.example.redbuild_ai_backend.entities.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/Transacciones")
@@ -59,23 +58,17 @@ public class TransaccionController {
         User user = uS.listId(dto.getIdUser())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No existe el usuario con ID: "
-                                        + dto.getIdUser()
+                                "No existe el usuario con ID: " + dto.getIdUser()
                         )
                 );
 
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = user.getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -84,38 +77,23 @@ public class TransaccionController {
             );
         }
 
-        Transaccion transaccion =
-                modelMapper.map(dto, Transaccion.class);
-
+        Transaccion transaccion = modelMapper.map(dto, Transaccion.class);
         transaccion.setIdTransaccion(null);
-        transaccion.setDateRegisterTransaction(
-                LocalDateTime.now()
-        );
+        transaccion.setDateRegisterTransaction(LocalDateTime.now());
         transaccion.setUser(user);
 
         tS.insert(transaccion);
 
-        TransaccionDTO responseDTO =
-                modelMapper.map(
-                        transaccion,
-                        TransaccionDTO.class
-                );
-
-        responseDTO.setIdUser(
-                transaccion.getUser().getIdUser()
-        );
+        TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
+        responseDTO.setIdUser(transaccion.getUser().getIdUser());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(
-                        transaccion.getIdTransaccion()
-                )
+                .buildAndExpand(transaccion.getIdTransaccion())
                 .toUri();
 
-        return ResponseEntity
-                .created(location)
-                .body(responseDTO);
+        return ResponseEntity.created(location).body(responseDTO);
     }
 
     @GetMapping("/{id}")
@@ -134,17 +112,12 @@ public class TransaccionController {
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = transaccion
                 .getUser()
                 .getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -153,15 +126,8 @@ public class TransaccionController {
             );
         }
 
-        TransaccionDTO dto =
-                modelMapper.map(
-                        transaccion,
-                        TransaccionDTO.class
-                );
-
-        dto.setIdUser(
-                transaccion.getUser().getIdUser()
-        );
+        TransaccionDTO dto = modelMapper.map(transaccion, TransaccionDTO.class);
+        dto.setIdUser(transaccion.getUser().getIdUser());
 
         return ResponseEntity.ok(dto);
     }
@@ -179,29 +145,22 @@ public class TransaccionController {
             );
         }
 
-        Transaccion transaccion =
-                tS.listId(dto.getIdTransaccion())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "No existe la transacción con ID: "
-                                                + dto.getIdTransaccion()
-                                )
-                        );
+        Transaccion transaccion = tS.listId(dto.getIdTransaccion())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "No existe la transacción con ID: " + dto.getIdTransaccion()
+                        )
+                );
 
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = transaccion
                 .getUser()
                 .getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -210,49 +169,23 @@ public class TransaccionController {
             );
         }
 
-        // No permitir cambiar al propietario
-        if (!transaccion
-                .getUser()
-                .getIdUser()
-                .equals(dto.getIdUser())) {
-
+        if (!transaccion.getUser().getIdUser().equals(dto.getIdUser())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "No se permite cambiar el propietario de la transacción"
             );
         }
 
-        transaccion.setTypeTransaction(
-                dto.getTypeTransaction()
-        );
-
-        transaccion.setAmountTransaction(
-                dto.getAmountTransaction()
-        );
-
-        transaccion.setDescriptionTransaction(
-                dto.getDescriptionTransaction()
-        );
-
-        transaccion.setPaymentMethod(
-                dto.getPaymentMethod()
-        );
-
-        transaccion.setStatusTransaction(
-                dto.isStatusTransaction()
-        );
+        transaccion.setTypeTransaction(dto.getTypeTransaction());
+        transaccion.setAmountTransaction(dto.getAmountTransaction());
+        transaccion.setDescriptionTransaction(dto.getDescriptionTransaction());
+        transaccion.setPaymentMethod(dto.getPaymentMethod());
+        transaccion.setStatusTransaction(dto.isStatusTransaction());
 
         tS.update(transaccion);
 
-        TransaccionDTO responseDTO =
-                modelMapper.map(
-                        transaccion,
-                        TransaccionDTO.class
-                );
-
-        responseDTO.setIdUser(
-                transaccion.getUser().getIdUser()
-        );
+        TransaccionDTO responseDTO = modelMapper.map(transaccion, TransaccionDTO.class);
+        responseDTO.setIdUser(transaccion.getUser().getIdUser());
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -273,17 +206,12 @@ public class TransaccionController {
         boolean esAdministrador = authentication
                 .getAuthorities()
                 .stream()
-                .anyMatch(a ->
-                        a.getAuthority()
-                                .equals("Administrador")
-                );
+                .anyMatch(a -> a.getAuthority().equals("Administrador"));
 
         boolean esPropietario = transaccion
                 .getUser()
                 .getEmailUser()
-                .equalsIgnoreCase(
-                        authentication.getName()
-                );
+                .equalsIgnoreCase(authentication.getName());
 
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
@@ -292,12 +220,8 @@ public class TransaccionController {
             );
         }
 
-        tS.delete(
-                transaccion.getIdTransaccion()
-        );
+        tS.delete(transaccion.getIdTransaccion());
 
-        return ResponseEntity.ok(
-                "Transacción eliminada correctamente"
-        );
+        return ResponseEntity.ok("Transacción eliminada correctamente");
     }
 }
