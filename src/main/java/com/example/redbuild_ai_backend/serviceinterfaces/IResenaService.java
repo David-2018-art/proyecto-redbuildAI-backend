@@ -9,6 +9,7 @@ public interface IResenaService {
 
     void insert(Resena r);
     List<Resena> list();
+    List<Resena> findByUserId(Long userId);
     void delete(Long id);
     Optional<Resena> listId(Long id);
     void update(Resena resena);

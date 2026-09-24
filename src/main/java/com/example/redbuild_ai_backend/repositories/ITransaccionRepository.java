@@ -11,7 +11,8 @@ import java.util.List;
 @Repository
 public interface ITransaccionRepository extends JpaRepository<Transaccion, Long> {
 
-    @Query(value = "SELECT t.*, u.idUser AS userId, u.nameUser AS userName, u.emailUser AS userEmail " +
+    @Query(value = "SELECT t.idTransaccion, t.typeTransaction, t.amountTransaction, t.descriptionTransaction, " +
+            "t.paymentMethod, t.dateRegisterTransaction, t.statusTransaction, u.idUser, u.nameUser, u.emailUser " +
             "FROM Transacciones t JOIN Usuarios u ON t.id_user = u.idUser " +
             "WHERE u.idUser = :userId", nativeQuery = true)
     List<Object[]> findTransactionsByUserId(@Param("userId") Long userId);
