@@ -6,6 +6,8 @@ import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.IResenaService;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/Resenas")
+@Tag(name = "Reseñas", description = "Endpoints para gestionar reseñas de usuarios")
 public class ResenaController {
 
     private final IResenaService rS;
@@ -34,6 +37,7 @@ public class ResenaController {
         this.modelMapper = modelMapper;
     }
 
+    @Operation(summary = "Listar reseñas", description = "Obtiene todas las reseñas registradas.")
     @GetMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<ResenaDTO>> listar() {
@@ -49,6 +53,7 @@ public class ResenaController {
         return ResponseEntity.ok(lista);
     }
 
+    @Operation(summary = "Registrar reseña", description = "Crea una reseña asociada a un usuario. Ejemplo de cuerpo: {\"titleResena\":\"Muy buena atención\",\"descriptionResena\":\"El servicio fue rápido y la atención fue excelente.\",\"scoreResena\":5,\"statusResena\":true,\"idUser\":7}")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<ResenaDTO> registrar(
@@ -96,6 +101,7 @@ public class ResenaController {
         return ResponseEntity.created(location).body(responseDTO);
     }
 
+    @Operation(summary = "Buscar reseña por ID", description = "Retorna la reseña según el identificador enviado.")
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<ResenaDTO> buscarId(@PathVariable Long id) {
@@ -107,6 +113,7 @@ public class ResenaController {
         return ResponseEntity.ok(dto);
     }
 
+    @Operation(summary = "Actualizar reseña", description = "Actualiza una reseña existente. Ejemplo de cuerpo: {\"idResena\":1,\"titleResena\":\"Muy buena atención\",\"descriptionResena\":\"La atención mejoró y el servicio fue excelente.\",\"scoreResena\":5,\"statusResena\":true,\"idUser\":7}")
     @PutMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<ResenaDTO> actualizar(
@@ -163,6 +170,7 @@ public class ResenaController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @Operation(summary = "Eliminar reseña", description = "Elimina la reseña según su ID.")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<String> eliminar(

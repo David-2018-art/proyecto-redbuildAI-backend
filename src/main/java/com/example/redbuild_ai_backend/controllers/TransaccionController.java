@@ -6,6 +6,8 @@ import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ITransaccionService;
 import com.example.redbuild_ai_backend.serviceinterfaces.IUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/Transacciones")
+@Tag(name = "Transacciones", description = "Endpoints para gestionar transacciones de usuarios")
 public class TransaccionController {
 
     private final ITransaccionService tS;
@@ -34,6 +37,7 @@ public class TransaccionController {
         this.modelMapper = modelMapper;
     }
 
+    @Operation(summary = "Listar transacciones", description = "Obtiene todas las transacciones registradas.")
     @GetMapping
     @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<List<TransaccionDTO>> listar() {
@@ -49,6 +53,7 @@ public class TransaccionController {
         return ResponseEntity.ok(lista);
     }
 
+    @Operation(summary = "Registrar transacción", description = "Crea una transacción asociada a un usuario. Ejemplo de cuerpo: {\"typeTransaction\":\"Pago\",\"amountTransaction\":250000,\"descriptionTransaction\":\"Compra de servicio premium\",\"paymentMethod\":\"Tarjeta de crédito\",\"statusTransaction\":true,\"idUser\":7}")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<TransaccionDTO> registrar(
@@ -96,6 +101,7 @@ public class TransaccionController {
         return ResponseEntity.created(location).body(responseDTO);
     }
 
+    @Operation(summary = "Buscar transacción por ID", description = "Retorna la transacción según el identificador enviado.")
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<TransaccionDTO> buscarId(
@@ -132,6 +138,7 @@ public class TransaccionController {
         return ResponseEntity.ok(dto);
     }
 
+    @Operation(summary = "Actualizar transacción", description = "Actualiza una transacción existente. Ejemplo de cuerpo: {\"idTransaccion\":1,\"typeTransaction\":\"Pago\",\"amountTransaction\":250000,\"descriptionTransaction\":\"Compra de servicio premium\",\"paymentMethod\":\"Tarjeta de crédito\",\"statusTransaction\":true,\"idUser\":7}")
     @PutMapping
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<TransaccionDTO> actualizar(
@@ -190,6 +197,7 @@ public class TransaccionController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @Operation(summary = "Eliminar transacción", description = "Elimina la transacción según su ID.")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<String> eliminar(
