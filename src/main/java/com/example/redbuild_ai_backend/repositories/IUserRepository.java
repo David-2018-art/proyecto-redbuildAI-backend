@@ -11,9 +11,10 @@ import java.util.List;
 @Repository
 public interface IUserRepository extends JpaRepository<User,Long> {
     boolean existsByRole_IdRole(Long idRole);
-    List<User> findByStatusUser(String statusUser);
-
     // Query simple: filtra usuarios directamente por su estado.
+    @Query("SELECT u FROM User u WHERE u.statusUser = :statusUser")
+    List<User> findByStatusUser(@Param("statusUser") String statusUser);
+
     // Query con JOIN: obtiene usuarios cuyo rol tiene el nombre indicado.
     @Query("SELECT u FROM User u JOIN u.role r WHERE r.nameRole = :nameRole")
     List<User> findByRoleName(@Param("nameRole") String nameRole);
