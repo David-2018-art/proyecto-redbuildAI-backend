@@ -12,11 +12,11 @@ import java.util.Optional;
 @Repository
 public interface IUserRepository extends JpaRepository<User,Long> {
     boolean existsByRole_IdRole(Long idRole);
-    // Query simple: filtra usuarios directamente por su estado.
+    /** Consulta simple que filtra usuarios directamente por su estado. */
     @Query("SELECT u FROM User u WHERE u.statusUser = :statusUser")
     List<User> findByStatusUser(@Param("statusUser") String statusUser);
 
-    // Query con JOIN: obtiene usuarios cuyo rol tiene el nombre indicado.
+    /** Consulta con JOIN que obtiene usuarios cuyo rol tiene el nombre indicado. */
     @Query("SELECT u FROM User u JOIN u.role r WHERE r.nameRole = :nameRole")
     List<User> findByRoleName(@Param("nameRole") String nameRole);
     Optional<User> findByEmailUser(String emailUser);
