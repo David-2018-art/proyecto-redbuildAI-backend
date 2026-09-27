@@ -14,4 +14,7 @@ public interface ICategoryService {
     public void delete(Long id);
     public Optional<Category> listId(Long id);
     public void update(Category cat);
+
+    public List<Category> buscarPorEstado(String estado);
+    public List<Object[]> contarProductosPorCategoria();
 }

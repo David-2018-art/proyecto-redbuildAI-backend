@@ -8,11 +8,18 @@ public interface IPublicationService {
 
     List<PublicationDTO> getAll();
 
+    List<PublicationDTO> findByStatus(String status);
+
+    long countByProductId(Long idProduct);
+
     PublicationDTO getById(Long id);
 
     PublicationDTO create(PublicationDTO publicationDTO);
 
-    PublicationDTO update(Long id, PublicationDTO publicationDTO);
+    PublicationDTO update(
+            Long id,
+            PublicationDTO publicationDTO
+    );
 
     void delete(Long id);
 }

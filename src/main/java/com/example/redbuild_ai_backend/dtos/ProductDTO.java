@@ -3,12 +3,15 @@ package com.example.redbuild_ai_backend.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class ProductDTO {
 
-    private Long IdProduct;
+    @JsonProperty("idProduct")
+    private Long idProduct;
     @NotBlank(message = "el nombre del producto es obligatorio.")
     private String nameProduct;
     @NotBlank(message = "la descripcion del producto es obligatorio.")
@@ -17,30 +20,32 @@ public class ProductDTO {
     private String material;
     @NotBlank(message = "el color del material es obligatorio.")
     private String colour;
-    @NotNull (message = "el estado del material es obligatorio.")
-    private boolean statusMaterial;
+    @NotBlank (message = "el estado del material es obligatorio.")
+    private String statusMaterial;
     @NotNull(message = "la cantidad disponible es obligatorio.")
-    private double quantityProduct;
+    private BigDecimal quantityProduct;
     @NotBlank(message = "la unidad de medida es obligatorio.")
     private String unidadMedidaProduct;
     @NotNull(message = "el precio del producto es obligatorio.")
-    private double priceProduct;
+    private BigDecimal priceProduct;
     private LocalDate dateRegisterProduct;
-    @NotNull(message = "el estado del producto es obligatorio.")
-    private boolean statusProduct;
+    @NotBlank(message = "el estado del producto es obligatorio.")
+    private String statusProduct;
     @NotNull(message = "el id de la categoria es obligatoria.")
     private Long idCategory;
-
+    @NotNull(message = "El propietario es obligatorio")
+    private Long idUser;
 
     public ProductDTO() {
     }
 
+
     public Long getIdProduct() {
-        return IdProduct;
+        return idProduct;
     }
 
     public void setIdProduct(Long idProduct) {
-        IdProduct = idProduct;
+        this.idProduct = idProduct;
     }
 
     public String getNameProduct() {
@@ -75,19 +80,19 @@ public class ProductDTO {
         this.colour = colour;
     }
 
-    public boolean isStatusMaterial() {
+    public String getStatusMaterial() {
         return statusMaterial;
     }
 
-    public void setStatusMaterial(boolean statusMaterial) {
+    public void setStatusMaterial(String statusMaterial) {
         this.statusMaterial = statusMaterial;
     }
 
-    public double getQuantityProduct() {
+    public BigDecimal getQuantityProduct() {
         return quantityProduct;
     }
 
-    public void setQuantityProduct(double quantityProduct) {
+    public void setQuantityProduct(BigDecimal quantityProduct) {
         this.quantityProduct = quantityProduct;
     }
 
@@ -99,11 +104,11 @@ public class ProductDTO {
         this.unidadMedidaProduct = unidadMedidaProduct;
     }
 
-    public double getPriceProduct() {
+    public BigDecimal getPriceProduct() {
         return priceProduct;
     }
 
-    public void setPriceProduct(double priceProduct) {
+    public void setPriceProduct(BigDecimal priceProduct) {
         this.priceProduct = priceProduct;
     }
 
@@ -115,11 +120,11 @@ public class ProductDTO {
         this.dateRegisterProduct = dateRegisterProduct;
     }
 
-    public boolean isStatusProduct() {
+    public String getStatusProduct() {
         return statusProduct;
     }
 
-    public void setStatusProduct(boolean statusProduct) {
+    public void setStatusProduct(String statusProduct) {
         this.statusProduct = statusProduct;
     }
 
@@ -131,4 +136,11 @@ public class ProductDTO {
         this.idCategory = idCategory;
     }
 
+    public Long getIdUser() {
+        return idUser;
+    }
+
+    public void setIdUser(Long idUser) {
+        this.idUser = idUser;
+    }
 }

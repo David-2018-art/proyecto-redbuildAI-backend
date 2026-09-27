@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IUserRepository extends JpaRepository<User,Long> {
@@ -18,5 +19,6 @@ public interface IUserRepository extends JpaRepository<User,Long> {
     // Query con JOIN: obtiene usuarios cuyo rol tiene el nombre indicado.
     @Query("SELECT u FROM User u JOIN u.role r WHERE r.nameRole = :nameRole")
     List<User> findByRoleName(@Param("nameRole") String nameRole);
+    Optional<User> findByEmailUser(String emailUser);
 
 }

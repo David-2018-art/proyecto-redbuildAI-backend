@@ -15,4 +15,5 @@ public interface IRoleService {
     public Optional<Role> listId(Long id);
     public void update(Role role);
     public List<Role> listByStatus(String statusRole);
+    Optional<Role> buscarPorNombre(String nameRole);
 }

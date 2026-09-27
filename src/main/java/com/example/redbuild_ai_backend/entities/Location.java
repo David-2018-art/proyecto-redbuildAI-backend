@@ -12,7 +12,7 @@ public class Location {
     @Column(name = "department",length = 60,nullable = false)
     private String department;
 
-    @Column(name = "province",length = 60)
+    @Column(name = "province",length = 60, nullable = false)
     private String province;
 
     @Column(name = "district",length = 60, nullable = false)
@@ -22,16 +22,16 @@ public class Location {
     private String referenceAddress;
 
     @Column(name = "latitude")
-    private double latitude;
+    private Double latitude;
 
     @Column(name = "longitude")
-    private double longitude;
+    private Double longitude;
 
     public Location() {
 
     }
 
-    public Location(Long idLocation, String department, String province, String district, String referenceAddress, double latitude, double longitude) {
+    public Location(Long idLocation, String department, String province, String district, String referenceAddress, Double latitude, Double longitude) {
         this.idLocation = idLocation;
         this.department = department;
         this.province = province;
@@ -82,19 +82,19 @@ public class Location {
         this.referenceAddress = referenceAddress;
     }
 
-    public double getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public double getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 }

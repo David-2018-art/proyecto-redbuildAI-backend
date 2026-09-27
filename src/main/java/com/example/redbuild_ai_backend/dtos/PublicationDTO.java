@@ -15,9 +15,19 @@ public class PublicationDTO {
 
     private Long id;
 
+    private String title;
+
+    private String observations;
+
+    private String operationType;
+
     private LocalDateTime publicationDate;
 
     private String status;
 
     private Long productId;
+
+    private Long locationId;
+
+    private Long publisherUserId;
 }

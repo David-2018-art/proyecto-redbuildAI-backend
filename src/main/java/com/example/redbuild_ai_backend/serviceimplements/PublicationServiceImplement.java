@@ -1,11 +1,15 @@
 package com.example.redbuild_ai_backend.serviceimplements;
 
 import com.example.redbuild_ai_backend.dtos.PublicationDTO;
+import com.example.redbuild_ai_backend.entities.Location;
 import com.example.redbuild_ai_backend.entities.Product;
 import com.example.redbuild_ai_backend.entities.Publication;
+import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
+import com.example.redbuild_ai_backend.repositories.ILocationRepository;
 import com.example.redbuild_ai_backend.repositories.IProductRepository;
 import com.example.redbuild_ai_backend.repositories.IPublicationRepository;
+import com.example.redbuild_ai_backend.repositories.IUserRepository;
 import com.example.redbuild_ai_backend.serviceinterfaces.IPublicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,13 +23,19 @@ public class PublicationServiceImplement
 
     private final IPublicationRepository publicationRepository;
     private final IProductRepository productRepository;
+    private final ILocationRepository locationRepository;
+    private final IUserRepository userRepository;
 
     public PublicationServiceImplement(
             IPublicationRepository publicationRepository,
-            IProductRepository productRepository) {
+            IProductRepository productRepository,
+            ILocationRepository locationRepository,
+            IUserRepository userRepository) {
 
         this.publicationRepository = publicationRepository;
         this.productRepository = productRepository;
+        this.locationRepository = locationRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -33,16 +43,47 @@ public class PublicationServiceImplement
 
         log.info("Obteniendo lista de publicaciones");
 
-        return publicationRepository.findAll()
+        return publicationRepository
+                .findAll()
                 .stream()
                 .map(this::convertToDTO)
                 .toList();
     }
 
     @Override
+    public List<PublicationDTO> findByStatus(String status) {
+
+        log.info(
+                "Buscando publicaciones por estado: {}",
+                status
+        );
+
+        return publicationRepository
+                .findByStatusIgnoreCase(status)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    @Override
+    public long countByProductId(Long idProduct) {
+
+        log.info(
+                "Contando publicaciones del producto con ID: {}",
+                idProduct
+        );
+
+        return publicationRepository
+                .countByProduct_IdProduct(idProduct);
+    }
+
+    @Override
     public PublicationDTO getById(Long id) {
 
-        log.info("Buscando publicación con ID: {}", id);
+        log.info(
+                "Buscando publicación con ID: {}",
+                id
+        );
 
         Publication publication = publicationRepository
                 .findById(id)
@@ -70,7 +111,37 @@ public class PublicationServiceImplement
                         )
                 );
 
+        Location location = locationRepository
+                .findById(publicationDTO.getLocationId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Ubicación no encontrada con ID: "
+                                        + publicationDTO.getLocationId()
+                        )
+                );
+
+        User publisher = userRepository
+                .findById(publicationDTO.getPublisherUserId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario no encontrado con ID: "
+                                        + publicationDTO.getPublisherUserId()
+                        )
+                );
+
         Publication publication = new Publication();
+
+        publication.setTitle(
+                publicationDTO.getTitle()
+        );
+
+        publication.setObservations(
+                publicationDTO.getObservations()
+        );
+
+        publication.setOperationType(
+                publicationDTO.getOperationType()
+        );
 
         publication.setPublicationDate(
                 publicationDTO.getPublicationDate()
@@ -81,6 +152,8 @@ public class PublicationServiceImplement
         );
 
         publication.setProduct(product);
+        publication.setLocation(location);
+        publication.setPublisher(publisher);
 
         Publication savedPublication =
                 publicationRepository.save(publication);
@@ -115,6 +188,36 @@ public class PublicationServiceImplement
                         )
                 );
 
+        Location location = locationRepository
+                .findById(publicationDTO.getLocationId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Ubicación no encontrada con ID: "
+                                        + publicationDTO.getLocationId()
+                        )
+                );
+
+        User publisher = userRepository
+                .findById(publicationDTO.getPublisherUserId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario no encontrado con ID: "
+                                        + publicationDTO.getPublisherUserId()
+                        )
+                );
+
+        publication.setTitle(
+                publicationDTO.getTitle()
+        );
+
+        publication.setObservations(
+                publicationDTO.getObservations()
+        );
+
+        publication.setOperationType(
+                publicationDTO.getOperationType()
+        );
+
         publication.setPublicationDate(
                 publicationDTO.getPublicationDate()
         );
@@ -124,6 +227,8 @@ public class PublicationServiceImplement
         );
 
         publication.setProduct(product);
+        publication.setLocation(location);
+        publication.setPublisher(publisher);
 
         Publication updatedPublication =
                 publicationRepository.save(publication);
@@ -160,6 +265,18 @@ public class PublicationServiceImplement
                 publication.getId()
         );
 
+        publicationDTO.setTitle(
+                publication.getTitle()
+        );
+
+        publicationDTO.setObservations(
+                publication.getObservations()
+        );
+
+        publicationDTO.setOperationType(
+                publication.getOperationType()
+        );
+
         publicationDTO.setPublicationDate(
                 publication.getPublicationDate()
         );
@@ -170,6 +287,14 @@ public class PublicationServiceImplement
 
         publicationDTO.setProductId(
                 publication.getProduct().getIdProduct()
+        );
+
+        publicationDTO.setLocationId(
+                publication.getLocation().getIdLocation()
+        );
+
+        publicationDTO.setPublisherUserId(
+                publication.getPublisher().getIdUser()
         );
 
         return publicationDTO;

@@ -2,6 +2,7 @@ package com.example.redbuild_ai_backend.controllers;
 
 
 import com.example.redbuild_ai_backend.dtos.CategoryDTO;
+import com.example.redbuild_ai_backend.dtos.CategoryProductCountDTO;
 import com.example.redbuild_ai_backend.entities.Category;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.serviceinterfaces.ICategoryService;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.util.List;
@@ -29,6 +31,7 @@ public class CategoryController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<List<CategoryDTO>> listar(){
         List<CategoryDTO> lista=cS.list()
                 .stream()
@@ -38,6 +41,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<CategoryDTO> registrar(@Valid @RequestBody CategoryDTO dto){
         Category category=modelMapper.map(dto,Category.class);
         category.setIdCategory(null);
@@ -55,6 +59,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
     public ResponseEntity<CategoryDTO> buscarId(@PathVariable Long id){
         Category category = cS.listId(id)
                 .orElseThrow(()->new ResourceNotFoundException("No se encuentra la categoria con ID: " + id));
@@ -65,6 +70,7 @@ public class CategoryController {
     }
 
     @PutMapping
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<CategoryDTO> actualizar(@Valid @RequestBody CategoryDTO dto){
         if(dto.getIdCategory()==null){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El id de la categoria es obligatoria para actualizar");
@@ -88,10 +94,67 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id){
-        Category category=cS.listId(id)
-                .orElseThrow(()->new ResourceNotFoundException("No se encuentra la categoria con ID: " + id));
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<String> eliminar(@PathVariable Long id) {
+        Category category = cS.listId(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe la categoria con ID: " + id
+                ));
+
         cS.delete(category.getIdCategory());
-        return ResponseEntity.ok("Categoria eliminada correctamente");
+
+        return ResponseEntity.ok(
+                "Categoria eliminada correctamente"
+        );
+    }
+
+
+    @GetMapping("/estado")
+    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    public ResponseEntity<List<CategoryDTO>>buscarPorEstado(@RequestParam("estado") String estado){
+        if (!"Activo".equals(estado) && !"Inactivo".equals(estado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El estado debe ser Activo o Inactivo"
+            );
+        }
+
+        List<CategoryDTO> lista = cS.buscarPorEstado(estado)
+                .stream()
+                .map(category ->
+                        modelMapper.map(category, CategoryDTO.class)
+                )
+                .toList();
+
+        return ResponseEntity.ok(lista);
+    }
+
+    @GetMapping("/cantidad-productos")
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<List<CategoryProductCountDTO>> contarProductosPorCategoria(){
+        List<CategoryProductCountDTO> lista =
+                cS.contarProductosPorCategoria()
+                        .stream()
+                        .map(fila -> {
+                            CategoryProductCountDTO dto =
+                                    new CategoryProductCountDTO();
+
+                            dto.setIdCategory(
+                                    ((Number) fila[0]).longValue()
+                            );
+
+                            dto.setNameCategory(
+                                    (String) fila[1]
+                            );
+
+                            dto.setQuantityProducts(
+                                    ((Number) fila[2]).longValue()
+                            );
+
+                            return dto;
+                        })
+                        .toList();
+
+        return ResponseEntity.ok(lista);
     }
 }

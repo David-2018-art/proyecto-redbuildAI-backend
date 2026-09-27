@@ -54,4 +54,9 @@ public class RoleServiceImplement implements IRoleService {
     public List<Role> listByStatus(String statusRole) {
         return rR.findByStatusRole(statusRole);
     }
+
+    @Override
+    public Optional<Role> buscarPorNombre(String nameRole) {
+        return rR.findByNameRole(nameRole);
+    }
 }
