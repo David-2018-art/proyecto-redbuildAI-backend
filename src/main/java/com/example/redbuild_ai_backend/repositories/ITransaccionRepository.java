@@ -9,11 +9,19 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ITransaccionRepository extends JpaRepository<Transaccion, Long> {
+public interface ITransaccionRepository
+        extends JpaRepository<Transaccion, Long> {
 
-    @Query(value = "SELECT t.idTransaccion, t.typeTransaction, t.amountTransaction, t.descriptionTransaction, " +
-            "t.paymentMethod, t.dateRegisterTransaction, t.statusTransaction, u.idUser, u.nameUser, u.emailUser " +
-            "FROM Transacciones t JOIN Usuarios u ON t.id_user = u.idUser " +
-            "WHERE u.idUser = :userId", nativeQuery = true)
-    List<Object[]> findTransactionsByUserId(@Param("userId") Long userId);
+    @Query("""
+            SELECT t
+            FROM Transaccion t
+            JOIN FETCH t.user u
+            JOIN FETCH t.publication
+            WHERE u.idUser = :userId
+            ORDER BY t.dateRegisterTransaction DESC,
+                     t.idTransaccion DESC
+            """)
+    List<Transaccion> findTransactionsByUserId(
+            @Param("userId") Long userId
+    );
 }

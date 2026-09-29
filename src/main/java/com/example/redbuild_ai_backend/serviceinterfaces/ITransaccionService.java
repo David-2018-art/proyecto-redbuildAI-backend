@@ -8,10 +8,15 @@ import java.util.Optional;
 
 public interface ITransaccionService {
 
-    void insert(Transaccion t);
+    void insert(Transaccion transaccion);
+
     List<Transaccion> list();
-    List<TransaccionUsuarioDTO> findTransactionsByUserId(Long userId);
-    void delete(Long id);
+
     Optional<Transaccion> listId(Long id);
+
+    List<TransaccionUsuarioDTO> findTransactionsByUserId(Long userId);
+
     void update(Transaccion transaccion);
+
+    void delete(Long id);
 }

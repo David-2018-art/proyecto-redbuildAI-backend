@@ -1,48 +1,94 @@
 package com.example.redbuild_ai_backend.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Schema(
-        name = "TransaccionDTO",
-        description = "Representa la información de una transacción realizada por un usuario.",
-        example = "{\"typeTransaction\":\"Pago\",\"amountTransaction\":250000,\"descriptionTransaction\":\"Compra de servicio premium\",\"paymentMethod\":\"Tarjeta de crédito\",\"statusTransaction\":true,\"idUser\":7}"
-)
+@Schema(description = "Solicitud de compra o donación de una publicación")
 public class TransaccionDTO {
 
-    @Schema(description = "ID único de la transacción.", example = "1")
     private Long idTransaccion;
 
-    @Schema(description = "Tipo de transacción realizada.", example = "Pago")
-    @NotBlank(message = "el tipo de transacción es obligatorio.")
+    @NotBlank(message = "El tipo de operación es obligatorio")
+    @Pattern(
+            regexp = "Venta|Donacion",
+            message = "El tipo de operación debe ser Venta o Donacion"
+    )
     private String typeTransaction;
 
-    @Schema(description = "Monto total de la transacción.", example = "250000")
-    @NotNull(message = "el monto de la transacción es obligatorio.")
-    private double amountTransaction;
+    @NotNull(message = "La cantidad es obligatoria")
+    @DecimalMin(value = "0", inclusive = false,
+            message = "La cantidad debe ser mayor que cero")
+    @Digits(integer = 9, fraction = 3,
+            message = "La cantidad admite hasta 9 enteros y 3 decimales")
+    private BigDecimal quantityTransaction;
 
-    @Schema(description = "Descripción detallada de la transacción.", example = "Compra de servicio premium")
-    @NotBlank(message = "la descripcion de la transacción es obligatoria.")
+    @NotNull(message = "El precio unitario acordado es obligatorio")
+    @DecimalMin(value = "0",
+            message = "El precio no puede ser negativo")
+    @Digits(integer = 10, fraction = 2,
+            message = "El precio admite hasta 10 enteros y 2 decimales")
+    private BigDecimal agreedUnitPrice;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private BigDecimal amountTransaction;
+
+    @Size(max = 500, message = "El mensaje admite hasta 500 caracteres")
     private String descriptionTransaction;
 
-    @Schema(description = "Método de pago empleado en la transacción.", example = "Tarjeta de crédito")
-    @NotBlank(message = "el método de pago es obligatorio.")
-    private String paymentMethod;
-
-    @Schema(description = "Fecha y hora en que se registró la transacción.", example = "2026-09-23T20:30:00")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime dateRegisterTransaction;
 
-    @Schema(description = "Estado de la transacción: activa o inactiva.", example = "true")
-    @NotNull(message = "el estado de la transacción es obligatorio.")
-    private boolean statusTransaction;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private LocalDateTime reservationDate;
 
-    @Schema(description = "ID del usuario que realizó la transacción.", example = "7")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private LocalDateTime closingDate;
+
+    @NotBlank(message = "El estado es obligatorio")
+    @Pattern(
+            regexp = "Solicitada|Reservada|Completada|Cancelada|Rechazada",
+            message = "El estado debe ser Solicitada, Reservada, "
+                    + "Completada, Cancelada o Rechazada"
+    )
+    private String statusTransaction;
+
+    @NotNull(message = "El ID de la publicación es obligatorio")
+    @Positive(message = "El ID de la publicación debe ser mayor que cero")
+    private Long idPublication;
+
+    @NotNull(message = "El ID del usuario adquirente es obligatorio")
+    @Positive(message = "El ID del usuario debe ser mayor que cero")
     private Long idUser;
 
     public TransaccionDTO() {
+    }
+
+    @AssertTrue(message = "En una donación el precio debe ser cero; "
+            + "en una venta debe ser mayor que cero")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(hidden = true)
+    public boolean isPrecioCompatible() {
+        if (typeTransaction == null || agreedUnitPrice == null) {
+            return true;
+        }
+
+        if ("Donacion".equals(typeTransaction)) {
+            return agreedUnitPrice.compareTo(BigDecimal.ZERO) == 0;
+        }
+
+        if ("Venta".equals(typeTransaction)) {
+            return agreedUnitPrice.compareTo(BigDecimal.ZERO) > 0;
+        }
+
+        return true;
     }
 
     public Long getIdTransaccion() {
@@ -61,11 +107,27 @@ public class TransaccionDTO {
         this.typeTransaction = typeTransaction;
     }
 
-    public double getAmountTransaction() {
+    public BigDecimal getQuantityTransaction() {
+        return quantityTransaction;
+    }
+
+    public void setQuantityTransaction(BigDecimal quantityTransaction) {
+        this.quantityTransaction = quantityTransaction;
+    }
+
+    public BigDecimal getAgreedUnitPrice() {
+        return agreedUnitPrice;
+    }
+
+    public void setAgreedUnitPrice(BigDecimal agreedUnitPrice) {
+        this.agreedUnitPrice = agreedUnitPrice;
+    }
+
+    public BigDecimal getAmountTransaction() {
         return amountTransaction;
     }
 
-    public void setAmountTransaction(double amountTransaction) {
+    public void setAmountTransaction(BigDecimal amountTransaction) {
         this.amountTransaction = amountTransaction;
     }
 
@@ -77,14 +139,6 @@ public class TransaccionDTO {
         this.descriptionTransaction = descriptionTransaction;
     }
 
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
     public LocalDateTime getDateRegisterTransaction() {
         return dateRegisterTransaction;
     }
@@ -93,12 +147,36 @@ public class TransaccionDTO {
         this.dateRegisterTransaction = dateRegisterTransaction;
     }
 
-    public boolean isStatusTransaction() {
+    public LocalDateTime getReservationDate() {
+        return reservationDate;
+    }
+
+    public void setReservationDate(LocalDateTime reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public LocalDateTime getClosingDate() {
+        return closingDate;
+    }
+
+    public void setClosingDate(LocalDateTime closingDate) {
+        this.closingDate = closingDate;
+    }
+
+    public String getStatusTransaction() {
         return statusTransaction;
     }
 
-    public void setStatusTransaction(boolean statusTransaction) {
+    public void setStatusTransaction(String statusTransaction) {
         this.statusTransaction = statusTransaction;
+    }
+
+    public Long getIdPublication() {
+        return idPublication;
+    }
+
+    public void setIdPublication(Long idPublication) {
+        this.idPublication = idPublication;
     }
 
     public Long getIdUser() {
@@ -109,4 +187,3 @@ public class TransaccionDTO {
         this.idUser = idUser;
     }
 }
-

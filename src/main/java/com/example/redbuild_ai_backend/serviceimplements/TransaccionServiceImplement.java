@@ -2,17 +2,32 @@ package com.example.redbuild_ai_backend.serviceimplements;
 
 import com.example.redbuild_ai_backend.dtos.TransaccionUsuarioDTO;
 import com.example.redbuild_ai_backend.entities.Transaccion;
+import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.repositories.ITransaccionRepository;
 import com.example.redbuild_ai_backend.serviceinterfaces.ITransaccionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
-public class TransaccionServiceImplement implements ITransaccionService {
+@Transactional(readOnly = true)
+public class TransaccionServiceImplement
+        implements ITransaccionService {
+
+    private static final Set<String> ESTADOS_VALIDOS = Set.of(
+            "Solicitada",
+            "Reservada",
+            "Completada",
+            "Cancelada",
+            "Rechazada"
+    );
 
     private final ITransaccionRepository tR;
 
@@ -21,8 +36,26 @@ public class TransaccionServiceImplement implements ITransaccionService {
     }
 
     @Override
-    public void insert(Transaccion t) {
-        tR.save(t);
+    @Transactional
+    public void insert(Transaccion transaccion) {
+
+        if (transaccion.getIdTransaccion() != null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "No envíes un ID para registrar una transacción"
+            );
+        }
+
+        validarDatos(transaccion);
+
+        if (!"Solicitada".equals(transaccion.getStatusTransaction())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Una transacción nueva debe tener estado Solicitada"
+            );
+        }
+
+        tR.saveAndFlush(transaccion);
     }
 
     @Override
@@ -31,70 +64,177 @@ public class TransaccionServiceImplement implements ITransaccionService {
     }
 
     @Override
-    public List<TransaccionUsuarioDTO> findTransactionsByUserId(Long userId) {
-        return tR.findTransactionsByUserId(userId).stream().map(row -> {
-            TransaccionUsuarioDTO dto = new TransaccionUsuarioDTO();
-
-            dto.setIdTransaccion(convertToLong(row[0]));
-            dto.setTypeTransaction(convertToString(row[1]));
-            dto.setAmountTransaction(convertToDouble(row[2]));
-            dto.setDescriptionTransaction(convertToString(row[3]));
-            dto.setPaymentMethod(convertToString(row[4]));
-
-            Object fecha = row[5];
-            if (fecha instanceof Timestamp timestamp) {
-                dto.setDateRegisterTransaction(timestamp.toLocalDateTime());
-            } else if (fecha instanceof LocalDateTime localDateTime) {
-                dto.setDateRegisterTransaction(localDateTime);
-            } else if (fecha instanceof java.sql.Date sqlDate) {
-                dto.setDateRegisterTransaction(sqlDate.toLocalDate().atStartOfDay());
-            } else if (fecha != null) {
-                dto.setDateRegisterTransaction(LocalDateTime.parse(fecha.toString()));
-            }
-
-            dto.setStatusTransaction(convertToBoolean(row[6]));
-            dto.setIdUser(convertToLong(row[7]));
-            dto.setNameUser(convertToString(row[8]));
-            dto.setEmailUser(convertToString(row[9]));
-            return dto;
-        }).toList();
-    }
-
-    private Long convertToLong(Object value) {
-        if (value == null) return null;
-        if (value instanceof Number number) return number.longValue();
-        return Long.parseLong(value.toString());
-    }
-
-    private Double convertToDouble(Object value) {
-        if (value == null) return 0.0;
-        if (value instanceof Number number) return number.doubleValue();
-        return Double.parseDouble(value.toString());
-    }
-
-    private Boolean convertToBoolean(Object value) {
-        if (value == null) return false;
-        if (value instanceof Boolean bool) return bool;
-        if (value instanceof Number number) return number.intValue() != 0;
-        return Boolean.parseBoolean(value.toString());
-    }
-
-    private String convertToString(Object value) {
-        return value == null ? null : value.toString();
-    }
-
-    @Override
-    public void delete(Long id) {
-        tR.deleteById(id);
-    }
-
-    @Override
     public Optional<Transaccion> listId(Long id) {
         return tR.findById(id);
     }
 
     @Override
+    public List<TransaccionUsuarioDTO> findTransactionsByUserId(
+            Long userId) {
+
+        return tR.findTransactionsByUserId(userId)
+                .stream()
+                .map(this::convertirDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional
     public void update(Transaccion transaccion) {
-        tR.save(transaccion);
+
+        Long id = transaccion.getIdTransaccion();
+
+        if (id == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El ID de la transacción es obligatorio"
+            );
+        }
+
+        if (!tR.existsById(id)) {
+            throw new ResourceNotFoundException(
+                    "No existe la transacción con ID: " + id
+            );
+        }
+
+        validarDatos(transaccion);
+
+        tR.saveAndFlush(transaccion);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+
+        Transaccion transaccion = tR.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe la transacción con ID: " + id
+                ));
+
+        tR.delete(transaccion);
+        tR.flush();
+    }
+
+    private void validarDatos(Transaccion transaccion) {
+
+        String tipo = transaccion.getTypeTransaction();
+
+        if (!"Venta".equals(tipo) && !"Donacion".equals(tipo)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El tipo de operación debe ser Venta o Donacion"
+            );
+        }
+
+        BigDecimal cantidad = transaccion.getQuantityTransaction();
+        BigDecimal precio = transaccion.getAgreedUnitPrice();
+
+        if (cantidad == null
+                || cantidad.compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La cantidad debe ser mayor que cero"
+            );
+        }
+
+        if (precio == null
+                || precio.compareTo(BigDecimal.ZERO) < 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El precio es obligatorio y no puede ser negativo"
+            );
+        }
+
+        if ("Donacion".equals(tipo)
+                && precio.compareTo(BigDecimal.ZERO) != 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "En una donación el precio debe ser cero"
+            );
+        }
+
+        if ("Venta".equals(tipo)
+                && precio.compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "En una venta el precio debe ser mayor que cero"
+            );
+        }
+
+        String estado = transaccion.getStatusTransaction();
+
+        if (estado == null || !ESTADOS_VALIDOS.contains(estado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El estado de la transacción no es válido"
+            );
+        }
+
+        if (transaccion.getPublication() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La publicación es obligatoria"
+            );
+        }
+
+        if (transaccion.getUser() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El usuario adquirente es obligatorio"
+            );
+        }
+
+        if (!Objects.equals(
+                tipo,
+                transaccion.getPublication().getOperationType())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El tipo de operación debe coincidir "
+                            + "con el de la publicación"
+            );
+        }
+    }
+
+    private TransaccionUsuarioDTO convertirDTO(
+            Transaccion transaccion) {
+
+        TransaccionUsuarioDTO dto = new TransaccionUsuarioDTO();
+
+        dto.setIdTransaccion(transaccion.getIdTransaccion());
+        dto.setTypeTransaction(transaccion.getTypeTransaction());
+        dto.setQuantityTransaction(
+                transaccion.getQuantityTransaction()
+        );
+        dto.setAgreedUnitPrice(transaccion.getAgreedUnitPrice());
+        dto.setAmountTransaction(transaccion.getAmountTransaction());
+        dto.setDescriptionTransaction(
+                transaccion.getDescriptionTransaction()
+        );
+        dto.setDateRegisterTransaction(
+                transaccion.getDateRegisterTransaction()
+        );
+        dto.setReservationDate(transaccion.getReservationDate());
+        dto.setClosingDate(transaccion.getClosingDate());
+        dto.setStatusTransaction(transaccion.getStatusTransaction());
+
+        dto.setIdPublication(
+                transaccion.getPublication().getId()
+        );
+        dto.setIdUser(
+                transaccion.getUser().getIdUser()
+        );
+        dto.setNameUser(
+                transaccion.getUser().getNameUser()
+        );
+        dto.setEmailUser(
+                transaccion.getUser().getEmailUser()
+        );
+
+        return dto;
     }
 }
