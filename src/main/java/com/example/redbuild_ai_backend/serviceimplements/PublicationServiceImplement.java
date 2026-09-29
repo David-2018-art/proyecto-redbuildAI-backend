@@ -14,6 +14,7 @@ import com.example.redbuild_ai_backend.serviceinterfaces.IPublicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -143,9 +144,7 @@ public class PublicationServiceImplement
                 publicationDTO.getOperationType()
         );
 
-        publication.setPublicationDate(
-                publicationDTO.getPublicationDate()
-        );
+        publication.setPublicationDate(LocalDateTime.now());
 
         publication.setStatus(
                 publicationDTO.getStatus()
@@ -216,10 +215,6 @@ public class PublicationServiceImplement
 
         publication.setOperationType(
                 publicationDTO.getOperationType()
-        );
-
-        publication.setPublicationDate(
-                publicationDTO.getPublicationDate()
         );
 
         publication.setStatus(
