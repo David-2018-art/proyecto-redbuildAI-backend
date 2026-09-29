@@ -2,6 +2,8 @@ package com.example.redbuild_ai_backend.entities;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,25 +14,52 @@ public class Transaccion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idTransaccion;
 
-    @Column(name = "typeTransaction", length = 50, nullable = false)
+    @Column(name = "typeTransaction", length = 20, nullable = false)
     private String typeTransaction;
 
-    @Column(name = "amountTransaction", nullable = false)
-    private double amountTransaction;
+    @Column(
+            name = "quantityTransaction",
+            precision = 12,
+            scale = 3,
+            nullable = false
+    )
+    private BigDecimal quantityTransaction;
 
-    @Column(name = "descriptionTransaction", length = 300, nullable = false)
+    @Column(
+            name = "agreedUnitPrice",
+            precision = 12,
+            scale = 2,
+            nullable = false
+    )
+    private BigDecimal agreedUnitPrice;
+
+    @Column(
+            name = "amountTransaction",
+            precision = 24,
+            scale = 2,
+            nullable = false
+    )
+    private BigDecimal amountTransaction;
+
+    @Column(name = "descriptionTransaction", length = 500)
     private String descriptionTransaction;
-
-    @Column(name = "paymentMethod", length = 60, nullable = false)
-    private String paymentMethod;
 
     @Column(name = "dateRegisterTransaction", nullable = false)
     private LocalDateTime dateRegisterTransaction;
 
-    @Column(name = "statusTransaction", nullable = false)
-    private boolean statusTransaction;
+    @Column(name = "reservationDate")
+    private LocalDateTime reservationDate;
 
-    // Relación con usuario: la transacción pertenece a un usuario (FK id_user)
+    @Column(name = "closingDate")
+    private LocalDateTime closingDate;
+
+    @Column(name = "statusTransaction", length = 20, nullable = false)
+    private String statusTransaction;
+
+    @ManyToOne
+    @JoinColumn(name = "id_publication", nullable = false)
+    private Publication publication;
+
     @ManyToOne
     @JoinColumn(name = "id_user", nullable = false)
     private User user;
@@ -38,14 +67,56 @@ public class Transaccion {
     public Transaccion() {
     }
 
-    public Transaccion(Long idTransaccion, String typeTransaction, double amountTransaction, String descriptionTransaction, String paymentMethod, LocalDateTime dateRegisterTransaction, boolean statusTransaction) {
+    public Transaccion(
+            Long idTransaccion,
+            String typeTransaction,
+            BigDecimal quantityTransaction,
+            BigDecimal agreedUnitPrice,
+            String descriptionTransaction,
+            LocalDateTime dateRegisterTransaction,
+            LocalDateTime reservationDate,
+            LocalDateTime closingDate,
+            String statusTransaction,
+            Publication publication,
+            User user) {
+
         this.idTransaccion = idTransaccion;
         this.typeTransaction = typeTransaction;
-        this.amountTransaction = amountTransaction;
+        this.quantityTransaction = quantityTransaction;
+        this.agreedUnitPrice = agreedUnitPrice;
         this.descriptionTransaction = descriptionTransaction;
-        this.paymentMethod = paymentMethod;
         this.dateRegisterTransaction = dateRegisterTransaction;
+        this.reservationDate = reservationDate;
+        this.closingDate = closingDate;
         this.statusTransaction = statusTransaction;
+        this.publication = publication;
+        this.user = user;
+    }
+
+    @PrePersist
+    public void prepararRegistro() {
+        if (dateRegisterTransaction == null) {
+            dateRegisterTransaction = LocalDateTime.now();
+        }
+
+        if (statusTransaction == null) {
+            statusTransaction = "Solicitada";
+        }
+
+        calcularMonto();
+    }
+
+    @PreUpdate
+    public void prepararActualizacion() {
+        calcularMonto();
+    }
+
+    private void calcularMonto() {
+        if (quantityTransaction != null && agreedUnitPrice != null) {
+            amountTransaction = quantityTransaction
+                    .multiply(agreedUnitPrice)
+                    .setScale(2, RoundingMode.HALF_UP);
+        }
     }
 
     public Long getIdTransaccion() {
@@ -64,12 +135,24 @@ public class Transaccion {
         this.typeTransaction = typeTransaction;
     }
 
-    public double getAmountTransaction() {
-        return amountTransaction;
+    public BigDecimal getQuantityTransaction() {
+        return quantityTransaction;
     }
 
-    public void setAmountTransaction(double amountTransaction) {
-        this.amountTransaction = amountTransaction;
+    public void setQuantityTransaction(BigDecimal quantityTransaction) {
+        this.quantityTransaction = quantityTransaction;
+    }
+
+    public BigDecimal getAgreedUnitPrice() {
+        return agreedUnitPrice;
+    }
+
+    public void setAgreedUnitPrice(BigDecimal agreedUnitPrice) {
+        this.agreedUnitPrice = agreedUnitPrice;
+    }
+
+    public BigDecimal getAmountTransaction() {
+        return amountTransaction;
     }
 
     public String getDescriptionTransaction() {
@@ -80,14 +163,6 @@ public class Transaccion {
         this.descriptionTransaction = descriptionTransaction;
     }
 
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
     public LocalDateTime getDateRegisterTransaction() {
         return dateRegisterTransaction;
     }
@@ -96,12 +171,36 @@ public class Transaccion {
         this.dateRegisterTransaction = dateRegisterTransaction;
     }
 
-    public boolean isStatusTransaction() {
+    public LocalDateTime getReservationDate() {
+        return reservationDate;
+    }
+
+    public void setReservationDate(LocalDateTime reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public LocalDateTime getClosingDate() {
+        return closingDate;
+    }
+
+    public void setClosingDate(LocalDateTime closingDate) {
+        this.closingDate = closingDate;
+    }
+
+    public String getStatusTransaction() {
         return statusTransaction;
     }
 
-    public void setStatusTransaction(boolean statusTransaction) {
+    public void setStatusTransaction(String statusTransaction) {
         this.statusTransaction = statusTransaction;
+    }
+
+    public Publication getPublication() {
+        return publication;
+    }
+
+    public void setPublication(Publication publication) {
+        this.publication = publication;
     }
 
     public User getUser() {
@@ -112,4 +211,3 @@ public class Transaccion {
         this.user = user;
     }
 }
-
