@@ -15,4 +15,5 @@ public interface IUserService {
     public Optional<User> listId(Long id);
     public void update(User user);
     public List<User> listByStatus(String statusUser);
+    public List<User> listByRoleName(String nameRole);
 }
