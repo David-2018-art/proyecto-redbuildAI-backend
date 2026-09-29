@@ -16,8 +16,8 @@ public interface IUserRepository extends JpaRepository<User,Long> {
     @Query("SELECT u FROM User u WHERE u.statusUser = :statusUser")
     List<User> findByStatusUser(@Param("statusUser") String statusUser);
 
-    /** Consulta con JOIN que obtiene usuarios cuyo rol tiene el nombre indicado. */
-    @Query("SELECT u FROM User u JOIN u.role r WHERE r.nameRole = :nameRole")
+    /** Consulta con JOIN que relaciona Usuarios con Roles y filtra por nombre de rol. */
+    @Query("SELECT u FROM User u INNER JOIN FETCH u.role r WHERE r.nameRole = :nameRole")
     List<User> findByRoleName(@Param("nameRole") String nameRole);
     Optional<User> findByEmailUser(String emailUser);
 
