@@ -22,10 +22,16 @@ public class JwtConfig {
     @Bean
     public SecretKey jwtSecretKey() {
 
-        return new SecretKeySpec(
-                secret.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA512"
-        );
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        if (secret.isBlank() || keyBytes.length < 64) {
+            throw new IllegalStateException(
+                    "JWT_SECRET debe contener una clave aleatoria "
+                            + "de al menos 64 bytes para HS512"
+            );
+        }
+
+        return new SecretKeySpec(keyBytes, "HmacSHA512");
     }
 
     @Bean

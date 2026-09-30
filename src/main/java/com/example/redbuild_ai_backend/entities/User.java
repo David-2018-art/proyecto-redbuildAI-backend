@@ -2,6 +2,9 @@ package com.example.redbuild_ai_backend.entities;
 
 import jakarta.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.UUID;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,6 +13,10 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUser;
+
+    @JsonIgnore
+    @Column(name = "token_version", nullable = false, length = 36)
+    private String tokenVersion = UUID.randomUUID().toString();
 
     @Column(name = "Nombres", nullable = false, length = 80)
     private String nameUser;
@@ -140,5 +147,14 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    @PreUpdate
+    public void renovarVersionSeguridad() {
+        tokenVersion = UUID.randomUUID().toString();
+    }
+
+    public String getTokenVersion() {
+        return tokenVersion;
     }
 }

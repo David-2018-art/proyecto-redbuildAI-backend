@@ -91,6 +91,7 @@ public class UserController {
     }
 
     @GetMapping("/por-rol")
+    @PreAuthorize("hasAuthority('Administrador')")
     public ResponseEntity<List<UserDTO>> buscarPorNombreDeRol(@RequestParam String nameRole){
         List<UserDTO> lista = uS.listByRoleName(nameRole)
                 .stream()
