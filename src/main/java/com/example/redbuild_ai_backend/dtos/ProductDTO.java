@@ -1,39 +1,79 @@
 package com.example.redbuild_ai_backend.dtos;
 
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 
 public class ProductDTO {
 
     @JsonProperty("idProduct")
     private Long idProduct;
-    @NotBlank(message = "el nombre del producto es obligatorio.")
+
+    @NotBlank(message = "El nombre del producto es obligatorio")
+    @Size(max = 100, message = "El nombre admite hasta 100 caracteres")
     private String nameProduct;
-    @NotBlank(message = "la descripcion del producto es obligatorio.")
+
+    @NotBlank(message = "La descripción es obligatoria")
+    @Size(max = 500, message = "La descripción admite hasta 500 caracteres")
     private String descriptionProduct;
-    @NotBlank(message = "el nombre del material es obligatorio.")
+
+    @NotBlank(message = "El material es obligatorio")
+    @Size(max = 80, message = "El material admite hasta 80 caracteres")
     private String material;
-    @NotBlank(message = "el color del material es obligatorio.")
+
+    @NotBlank(message = "El color es obligatorio")
+    @Size(max = 40, message = "El color admite hasta 40 caracteres")
     private String colour;
-    @NotBlank (message = "el estado del material es obligatorio.")
+
+    @NotBlank(message = "El estado del material es obligatorio")
+    @Pattern(
+            regexp = "Nuevo|Como nuevo|Bueno|Regular",
+            message = "El estado del material debe ser Nuevo, Como nuevo, Bueno o Regular"
+    )
     private String statusMaterial;
-    @NotNull(message = "la cantidad disponible es obligatorio.")
+
+    @NotNull(message = "La cantidad es obligatoria")
+    @DecimalMin(value = "0", message = "La cantidad no puede ser negativa")
+    @Digits(
+            integer = 9,
+            fraction = 3,
+            message = "La cantidad admite hasta 9 enteros y 3 decimales"
+    )
     private BigDecimal quantityProduct;
-    @NotBlank(message = "la unidad de medida es obligatorio.")
+
+    @NotBlank(message = "La unidad de medida es obligatoria")
+    @Size(max = 30, message = "La unidad de medida admite hasta 30 caracteres")
     private String unidadMedidaProduct;
-    @NotNull(message = "el precio del producto es obligatorio.")
+
+    @NotNull(message = "El precio es obligatorio")
+    @DecimalMin(value = "0", message = "El precio no puede ser negativo")
+    @Digits(
+            integer = 10,
+            fraction = 2,
+            message = "El precio admite hasta 10 enteros y 2 decimales"
+    )
     private BigDecimal priceProduct;
-    private LocalDate dateRegisterProduct;
-    @NotBlank(message = "el estado del producto es obligatorio.")
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime dateRegisterProduct;
+
+    @NotBlank(message = "El estado del producto es obligatorio")
+    @Pattern(
+            regexp = "Activo|Inactivo",
+            message = "El estado del producto debe ser Activo o Inactivo"
+    )
     private String statusProduct;
-    @NotNull(message = "el id de la categoria es obligatoria.")
+
+    @NotNull(message = "La categoría es obligatoria")
+    @Positive(message = "El ID de la categoría debe ser mayor que cero")
     private Long idCategory;
+
     @NotNull(message = "El propietario es obligatorio")
+    @Positive(message = "El ID del propietario debe ser mayor que cero")
     private Long idUser;
 
     public ProductDTO() {
@@ -112,11 +152,11 @@ public class ProductDTO {
         this.priceProduct = priceProduct;
     }
 
-    public LocalDate getDateRegisterProduct() {
+    public LocalDateTime getDateRegisterProduct() {
         return dateRegisterProduct;
     }
 
-    public void setDateRegisterProduct(LocalDate dateRegisterProduct) {
+    public void setDateRegisterProduct(LocalDateTime dateRegisterProduct) {
         this.dateRegisterProduct = dateRegisterProduct;
     }
 

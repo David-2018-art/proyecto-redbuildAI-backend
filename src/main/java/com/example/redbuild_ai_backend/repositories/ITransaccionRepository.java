@@ -24,4 +24,8 @@ public interface ITransaccionRepository
     List<Transaccion> findTransactionsByUserId(
             @Param("userId") Long userId
     );
+
+    boolean existsByPublication_Id(Long publicationId);
+
+    boolean existsByUser_IdUser(Long idUser);
 }

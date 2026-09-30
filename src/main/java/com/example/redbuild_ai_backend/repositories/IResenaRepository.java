@@ -9,8 +9,29 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface IResenaRepository extends JpaRepository<Resena, Long> {
+public interface IResenaRepository
+        extends JpaRepository<Resena, Long> {
 
-    @Query("SELECT r FROM Resena r JOIN FETCH r.user u WHERE u.idUser = :userId")
+    @Query("""
+            SELECT r
+            FROM Resena r
+            JOIN FETCH r.user u
+            JOIN FETCH r.ratedUser
+            JOIN FETCH r.transaccion
+            WHERE u.idUser = :userId
+            ORDER BY r.dateRegisterResena DESC, r.idResena DESC
+            """)
     List<Resena> findByUserId(@Param("userId") Long userId);
+
+    boolean existsByTransaccion_IdTransaccionAndUser_IdUser(
+            Long idTransaccion,
+            Long idUser
+    );
+
+    boolean existsByTransaccion_IdTransaccion(Long idTransaccion);
+
+    boolean existsByUser_IdUserOrRatedUser_IdUser(
+            Long idAutor,
+            Long idCalificado
+    );
 }

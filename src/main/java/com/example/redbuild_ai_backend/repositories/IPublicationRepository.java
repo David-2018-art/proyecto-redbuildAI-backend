@@ -23,4 +23,8 @@ public interface IPublicationRepository
     long countByProduct_IdProduct(
             @Param("idProduct") Long idProduct
     );
+
+    boolean existsByLocation_IdLocation(Long idLocation);
+
+    boolean existsByPublisher_IdUser(Long idUser);
 }

@@ -1,44 +1,71 @@
 package com.example.redbuild_ai_backend.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Schema(
         name = "ResenaDTO",
-        description = "Representa la información de una reseña creada por un usuario.",
-        example = "{\"titleResena\":\"Muy buena atención\",\"descriptionResena\":\"El servicio fue rápido y la atención fue excelente.\",\"scoreResena\":5,\"statusResena\":true,\"idUser\":7}"
+        description = "Calificación de un usuario sobre una transacción"
 )
 public class ResenaDTO {
 
-    @Schema(description = "ID único de la reseña.", example = "1")
     private Long idResena;
 
-    @Schema(description = "Título o resumen corto de la reseña.", example = "Muy buena atención")
-    @NotBlank(message = "el titulo de la reseña es obligatorio.")
+    @NotBlank(message = "El título de la reseña es obligatorio")
+    @Size(max = 100, message = "El título admite hasta 100 caracteres")
     private String titleResena;
 
-    @Schema(description = "Descripción detallada de la experiencia del usuario.", example = "El servicio fue rápido y la atención fue excelente.")
-    @NotBlank(message = "la descripcion de la reseña es obligatoria.")
+    @Size(
+            max = 500,
+            message = "El comentario admite hasta 500 caracteres"
+    )
     private String descriptionResena;
 
-    @Schema(description = "Puntaje de la reseña, de 1 a 5.", example = "5")
-    @NotNull(message = "la calificación es obligatoria.")
+    @NotNull(message = "La calificación es obligatoria")
+    @Min(value = 1, message = "La calificación mínima es 1")
+    @Max(value = 5, message = "La calificación máxima es 5")
     private Integer scoreResena;
 
-    @Schema(description = "Fecha y hora en que se registró la reseña.", example = "2026-09-23T20:30:00")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime dateRegisterResena;
 
-    @Schema(description = "Estado de la reseña: activa o inactiva.", example = "true")
-    @NotNull(message = "el estado de la reseña es obligatorio.")
-    private boolean statusResena;
+    @NotNull(message = "El estado de la reseña es obligatorio")
+    private Boolean statusResena;
 
-    @Schema(description = "ID del usuario que creó la reseña.", example = "7")
+    @NotNull(message = "El ID del autor es obligatorio")
+    @Positive(message = "El ID del autor debe ser mayor que cero")
     private Long idUser;
 
+    @NotNull(message = "El ID del usuario calificado es obligatorio")
+    @Positive(
+            message = "El ID del usuario calificado debe ser mayor que cero"
+    )
+    private Long idRatedUser;
+
+    @NotNull(message = "El ID de la transacción es obligatorio")
+    @Positive(
+            message = "El ID de la transacción debe ser mayor que cero"
+    )
+    private Long idTransaccion;
+
     public ResenaDTO() {
+    }
+
+    @AssertTrue(message = "No puedes calificarte a ti mismo")
+    @JsonIgnore
+    @Schema(hidden = true)
+    public boolean isUsuariosDiferentes() {
+        if (idUser == null || idRatedUser == null) {
+            return true;
+        }
+
+        return !Objects.equals(idUser, idRatedUser);
     }
 
     public Long getIdResena() {
@@ -81,11 +108,11 @@ public class ResenaDTO {
         this.dateRegisterResena = dateRegisterResena;
     }
 
-    public boolean isStatusResena() {
+    public Boolean getStatusResena() {
         return statusResena;
     }
 
-    public void setStatusResena(boolean statusResena) {
+    public void setStatusResena(Boolean statusResena) {
         this.statusResena = statusResena;
     }
 
@@ -96,5 +123,20 @@ public class ResenaDTO {
     public void setIdUser(Long idUser) {
         this.idUser = idUser;
     }
-}
 
+    public Long getIdRatedUser() {
+        return idRatedUser;
+    }
+
+    public void setIdRatedUser(Long idRatedUser) {
+        this.idRatedUser = idRatedUser;
+    }
+
+    public Long getIdTransaccion() {
+        return idTransaccion;
+    }
+
+    public void setIdTransaccion(Long idTransaccion) {
+        this.idTransaccion = idTransaccion;
+    }
+}
