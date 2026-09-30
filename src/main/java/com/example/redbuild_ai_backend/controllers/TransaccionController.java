@@ -141,7 +141,6 @@ public class TransaccionController {
                 .body(convertirDTO(guardada));
     }
 
-    // ACTUALIZAR
     @PutMapping
     public ResponseEntity<TransaccionDTO> actualizar(
             @Valid @RequestBody TransaccionDTO dto,
@@ -158,26 +157,110 @@ public class TransaccionController {
                 dto.getIdTransaccion()
         );
 
-        verificarPermiso(transaccion.getUser(), authentication);
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> "Administrador".equals(a.getAuthority()));
 
-        if (!Objects.equals(
-                transaccion.getUser().getIdUser(),
-                dto.getIdUser())) {
+        boolean esAdquirente = authentication.getName()
+                .equalsIgnoreCase(
+                        transaccion.getUser().getEmailUser()
+                );
 
+        boolean esPublicador = authentication.getName()
+                .equalsIgnoreCase(
+                        transaccion.getPublication()
+                                .getPublisher().getEmailUser()
+                );
+
+        if (!esAdministrador && !esAdquirente && !esPublicador) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No se permite cambiar el usuario adquirente"
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para actualizar esta transacción"
             );
         }
 
         if (!Objects.equals(
+                transaccion.getUser().getIdUser(),
+                dto.getIdUser())
+                || !Objects.equals(
                 transaccion.getPublication().getId(),
                 dto.getIdPublication())) {
 
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "No se permite cambiar la publicación de la transacción"
+                    "No se permite cambiar el adquirente ni la publicación"
             );
+        }
+
+        String estadoActual = transaccion.getStatusTransaction();
+        String nuevoEstado = dto.getStatusTransaction();
+
+        if ("Completada".equals(estadoActual)
+                || "Cancelada".equals(estadoActual)
+                || "Rechazada".equals(estadoActual)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Una transacción finalizada no se puede modificar"
+            );
+        }
+
+        boolean cambiaEstado = !Objects.equals(
+                estadoActual,
+                nuevoEstado
+        );
+
+        if (cambiaEstado) {
+            validarCambioEstado(
+                    estadoActual,
+                    nuevoEstado,
+                    esAdquirente,
+                    esPublicador,
+                    esAdministrador
+            );
+        }
+
+        boolean cambiaContenido =
+                !Objects.equals(
+                        transaccion.getTypeTransaction(),
+                        dto.getTypeTransaction()
+                )
+                        || transaccion.getQuantityTransaction()
+                        .compareTo(dto.getQuantityTransaction()) != 0
+                        || transaccion.getAgreedUnitPrice()
+                        .compareTo(dto.getAgreedUnitPrice()) != 0
+                        || !Objects.equals(
+                        transaccion.getDescriptionTransaction(),
+                        dto.getDescriptionTransaction()
+                );
+
+        // La solicitud solo se puede editar antes de reservarla.
+        // El publicador cambia el estado, no el contenido del adquirente.
+        if (cambiaContenido) {
+
+            if (!esAdquirente && !esAdministrador) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Solo el adquirente o administrador puede "
+                                + "editar el contenido de la solicitud"
+                );
+            }
+
+            if (!"Solicitada".equals(estadoActual)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Solo se puede editar el contenido "
+                                + "mientras la transacción esté Solicitada"
+                );
+            }
+
+            if (cambiaEstado) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Actualiza el contenido y el estado "
+                                + "en solicitudes separadas"
+                );
+            }
         }
 
         validarTipoOperacion(dto, transaccion.getPublication());
@@ -189,18 +272,16 @@ public class TransaccionController {
                 dto.getDescriptionTransaction()
         );
 
-        actualizarFechas(transaccion, dto.getStatusTransaction());
-
-        transaccion.setStatusTransaction(dto.getStatusTransaction());
+        actualizarFechas(transaccion, nuevoEstado);
+        transaccion.setStatusTransaction(nuevoEstado);
 
         tS.update(transaccion);
 
-        // Obtener el monto recalculado después de guardar.
-        Transaccion actualizada = buscarTransaccion(
-                transaccion.getIdTransaccion()
+        return ResponseEntity.ok(
+                convertirDTO(
+                        buscarTransaccion(transaccion.getIdTransaccion())
+                )
         );
-
-        return ResponseEntity.ok(convertirDTO(actualizada));
     }
 
     // ELIMINAR
@@ -329,4 +410,64 @@ public class TransaccionController {
 
         return dto;
     }
+
+    private void validarCambioEstado(
+            String estadoActual,
+            String nuevoEstado,
+            boolean esAdquirente,
+            boolean esPublicador,
+            boolean esAdministrador) {
+
+        boolean puedeGestionar = esPublicador || esAdministrador;
+
+        switch (nuevoEstado) {
+            case "Reservada", "Rechazada", "Completada" -> {
+                if (!puedeGestionar) {
+                    throw new ResponseStatusException(
+                            HttpStatus.FORBIDDEN,
+                            "Solo el publicador o administrador "
+                                    + "puede reservar, rechazar o completar"
+                    );
+                }
+            }
+
+            case "Cancelada" -> {
+                if (!esAdquirente && !puedeGestionar) {
+                    throw new ResponseStatusException(
+                            HttpStatus.FORBIDDEN,
+                            "No tienes permiso para cancelar"
+                    );
+                }
+            }
+
+            default -> throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se permite volver al estado Solicitada"
+            );
+        }
+
+        boolean cambioValido = switch (estadoActual) {
+            case "Solicitada" ->
+                    "Reservada".equals(nuevoEstado)
+                            || "Rechazada".equals(nuevoEstado)
+                            || "Cancelada".equals(nuevoEstado);
+
+            case "Reservada" ->
+                    "Completada".equals(nuevoEstado)
+                            || "Cancelada".equals(nuevoEstado);
+
+            default -> false;
+        };
+
+        if (!cambioValido) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede pasar de " + estadoActual
+                            + " a " + nuevoEstado
+            );
+        }
+    }
+
+
+
 }

@@ -6,13 +6,14 @@ import com.example.redbuild_ai_backend.entities.Product;
 import com.example.redbuild_ai_backend.entities.Publication;
 import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
-import com.example.redbuild_ai_backend.repositories.ILocationRepository;
-import com.example.redbuild_ai_backend.repositories.IProductRepository;
-import com.example.redbuild_ai_backend.repositories.IPublicationRepository;
-import com.example.redbuild_ai_backend.repositories.IUserRepository;
+import com.example.redbuild_ai_backend.repositories.*;
 import com.example.redbuild_ai_backend.serviceinterfaces.IPublicationService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,19 +27,24 @@ public class PublicationServiceImplement
     private final IProductRepository productRepository;
     private final ILocationRepository locationRepository;
     private final IUserRepository userRepository;
+    private final IPublicationPhotoRepository photoRepository;
+    private final ITransaccionRepository transaccionRepository;
 
     public PublicationServiceImplement(
             IPublicationRepository publicationRepository,
             IProductRepository productRepository,
             ILocationRepository locationRepository,
-            IUserRepository userRepository) {
+            IUserRepository userRepository,
+            IPublicationPhotoRepository photoRepository,
+            ITransaccionRepository transaccionRepository) {
 
         this.publicationRepository = publicationRepository;
         this.productRepository = productRepository;
         this.locationRepository = locationRepository;
         this.userRepository = userRepository;
+        this.photoRepository = photoRepository;
+        this.transaccionRepository = transaccionRepository;
     }
-
     @Override
     public List<PublicationDTO> getAll() {
 
@@ -232,22 +238,41 @@ public class PublicationServiceImplement
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
 
-        log.warn(
-                "Eliminando publicación con ID: {}",
-                id
-        );
+        Publication publication = publicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Publicación no encontrada con ID: " + id
+                ));
 
-        Publication publication = publicationRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Publicación no encontrada con ID: " + id
-                        )
-                );
+        if (photoRepository.existsByPublication_Id(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la publicación porque "
+                            + "tiene fotos asociadas"
+            );
+        }
 
-        publicationRepository.delete(publication);
+        if (transaccionRepository.existsByPublication_Id(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la publicación porque "
+                            + "tiene transacciones asociadas"
+            );
+        }
+
+        try {
+            publicationRepository.delete(publication);
+            publicationRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la publicación porque "
+                            + "tiene registros asociados",
+                    exception
+            );
+        }
     }
 
     private PublicationDTO convertToDTO(

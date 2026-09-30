@@ -3,8 +3,10 @@ package com.example.redbuild_ai_backend.serviceimplements;
 import com.example.redbuild_ai_backend.dtos.TransaccionUsuarioDTO;
 import com.example.redbuild_ai_backend.entities.Transaccion;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
+import com.example.redbuild_ai_backend.repositories.IResenaRepository;
 import com.example.redbuild_ai_backend.repositories.ITransaccionRepository;
 import com.example.redbuild_ai_backend.serviceinterfaces.ITransaccionService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +32,14 @@ public class TransaccionServiceImplement
     );
 
     private final ITransaccionRepository tR;
+    private final IResenaRepository resenaRepository;
 
-    public TransaccionServiceImplement(ITransaccionRepository tR) {
+    public TransaccionServiceImplement(
+            ITransaccionRepository tR,
+            IResenaRepository resenaRepository) {
+
         this.tR = tR;
+        this.resenaRepository = resenaRepository;
     }
 
     @Override
@@ -111,8 +118,25 @@ public class TransaccionServiceImplement
                         "No existe la transacción con ID: " + id
                 ));
 
-        tR.delete(transaccion);
-        tR.flush();
+        if (resenaRepository.existsByTransaccion_IdTransaccion(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la transacción porque "
+                            + "tiene reseñas asociadas"
+            );
+        }
+
+        try {
+            tR.delete(transaccion);
+            tR.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede eliminar la transacción porque "
+                            + "tiene registros asociados",
+                    exception
+            );
+        }
     }
 
     private void validarDatos(Transaccion transaccion) {

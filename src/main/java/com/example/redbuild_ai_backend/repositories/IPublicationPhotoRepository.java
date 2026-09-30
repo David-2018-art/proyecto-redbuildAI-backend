@@ -12,4 +12,7 @@ import java.util.List;
 public interface IPublicationPhotoRepository extends JpaRepository<PublicationPhoto,Long> {
     @Query("SELECT pp FROM PublicationPhoto pp JOIN pp.publication p WHERE p.id = :publicationId")
     List<PublicationPhoto> findByPublicationId(@Param("publicationId") Long publicationId);
+
+    boolean existsByPublication_Id(Long publicationId);
+
 }
