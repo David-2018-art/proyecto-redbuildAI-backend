@@ -1,5 +1,6 @@
 package com.example.redbuild_ai_backend.serviceinterfaces;
 
+import com.example.redbuild_ai_backend.dtos.UserCountByRoleDTO;
 import com.example.redbuild_ai_backend.entities.User;
 
 
@@ -16,4 +17,5 @@ public interface IUserService {
     public void update(User user);
     public List<User> listByStatus(String statusUser);
     public List<User> listByRoleName(String nameRole);
+    List<UserCountByRoleDTO> countUsersByRole();
 }

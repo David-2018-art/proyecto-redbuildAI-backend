@@ -50,7 +50,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            CustomJwtAuthenticationConverter jwtConverter)
             throws Exception {
 
         http
@@ -89,7 +91,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt ->
                                 jwt.jwtAuthenticationConverter(
-                                        new CustomJwtAuthenticationConverter()
+                                        jwtConverter
                                 )
                         )
                 );

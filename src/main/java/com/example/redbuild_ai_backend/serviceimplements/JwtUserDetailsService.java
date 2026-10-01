@@ -1,16 +1,13 @@
 package com.example.redbuild_ai_backend.serviceimplements;
 
-
 import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.repositories.IUserRepository;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
@@ -22,30 +19,31 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String emailUser)
-            throws UsernameNotFoundException {
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String emailUser) {
 
         User user = userRepository.findByEmailUser(emailUser)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "Usuario no encontrado: " + emailUser
-                        )
-                );
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Credenciales incorrectas"
+                ));
 
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority(
-                        user.getRole().getNameRole()
-                )
-        );
+        if (!"Activo".equalsIgnoreCase(user.getStatusUser())
+                || user.getRole() == null
+                || !"Activo".equalsIgnoreCase(
+                user.getRole().getStatusRole())
+                || user.getRole().getNameRole() == null
+                || user.getRole().getNameRole().isBlank()) {
 
-        return org.springframework.security.core.userdetails.User.builder()
+            throw new DisabledException(
+                    "El usuario o su rol no está habilitado"
+            );
+        }
+
+        return org.springframework.security.core.userdetails.User
+                .builder()
                 .username(user.getEmailUser())
                 .password(user.getPasswordUser())
-                .authorities(authorities)
-                .disabled(!user.getStatusUser().equalsIgnoreCase("Activo"))
+                .authorities(user.getRole().getNameRole())
                 .build();
     }
-
-
-
 }
