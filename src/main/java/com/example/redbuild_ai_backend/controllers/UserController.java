@@ -1,6 +1,7 @@
 package com.example.redbuild_ai_backend.controllers;
 
 
+import com.example.redbuild_ai_backend.dtos.UserCountByRoleDTO;
 import com.example.redbuild_ai_backend.dtos.UserDTO;
 import com.example.redbuild_ai_backend.dtos.UserRegisterDTO;
 import com.example.redbuild_ai_backend.entities.User;
@@ -219,5 +220,14 @@ public class UserController {
         return ResponseEntity
                 .created(location)
                 .body(responseDTO);
+    }
+
+    @GetMapping("/cantidad-por-rol")
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<List<UserCountByRoleDTO>> contarUsuariosPorRol() {
+
+        return ResponseEntity.ok(
+                uS.countUsersByRole()
+        );
     }
 }

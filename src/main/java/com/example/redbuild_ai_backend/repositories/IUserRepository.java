@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import com.example.redbuild_ai_backend.dtos.UserCountByRoleDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,4 +22,16 @@ public interface IUserRepository extends JpaRepository<User,Long> {
     List<User> findByRoleName(@Param("nameRole") String nameRole);
     Optional<User> findByEmailUser(String emailUser);
 
+    @Query("""
+        SELECT new com.example.redbuild_ai_backend.dtos.UserCountByRoleDTO(
+            r.idRole,
+            r.nameRole,
+            COUNT(u.idUser)
+        )
+        FROM Role r
+        LEFT JOIN User u ON u.role = r
+        GROUP BY r.idRole, r.nameRole
+        ORDER BY r.idRole
+        """)
+    List<UserCountByRoleDTO> countUsersByRole();
 }

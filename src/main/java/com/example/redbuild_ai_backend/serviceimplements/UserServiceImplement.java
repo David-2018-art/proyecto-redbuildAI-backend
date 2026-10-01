@@ -1,5 +1,6 @@
 package com.example.redbuild_ai_backend.serviceimplements;
 
+import com.example.redbuild_ai_backend.dtos.UserCountByRoleDTO;
 import com.example.redbuild_ai_backend.entities.User;
 import com.example.redbuild_ai_backend.exceptions.ResourceNotFoundException;
 import com.example.redbuild_ai_backend.repositories.IProductRepository;
@@ -75,6 +76,11 @@ public class UserServiceImplement implements IUserService {
     @Override
     public List<User> listByRoleName(String nameRole) {
         return uR.findByRoleName(nameRole);
+    }
+
+    @Override
+    public List<UserCountByRoleDTO> countUsersByRole() {
+        return uR.countUsersByRole();
     }
 
     @Override
