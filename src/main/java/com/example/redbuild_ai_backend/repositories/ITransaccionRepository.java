@@ -28,4 +28,19 @@ public interface ITransaccionRepository
     boolean existsByPublication_Id(Long publicationId);
 
     boolean existsByUser_IdUser(Long idUser);
+
+    @Query("""
+        SELECT t.typeTransaction,
+               COUNT(t),
+               SUM(t.amountTransaction)
+        FROM Transaccion t
+        JOIN t.publication p
+        JOIN p.publisher u
+        WHERE u.idUser = :idEmpresa
+          AND t.statusTransaction = 'Completada'
+        GROUP BY t.typeTransaction
+        """)
+    List<Object[]> resumenPorEmpresa(
+            @Param("idEmpresa") Long idEmpresa
+    );
 }
