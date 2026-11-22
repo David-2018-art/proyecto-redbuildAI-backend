@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/Roles")
-@PreAuthorize("hasAuthority('Administrador')")
+//@PreAuthorize("hasAuthority('Administrador')")
 public class RoleController {
     private final IRoleService rS;
     private final ModelMapper modelMapper;
