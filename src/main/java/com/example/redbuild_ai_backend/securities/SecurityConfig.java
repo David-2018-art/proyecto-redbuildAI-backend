@@ -96,7 +96,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http,
+            CustomJwtAuthenticationConverter jwtConverter
+    ) throws Exception {
 
         http
                 .cors(Customizer.withDefaults())
@@ -111,6 +113,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/Users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/Roles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/crops/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/Roles").permitAll()
@@ -125,11 +128,10 @@ public class SecurityConfig {
                 // habilitar después
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(
-                                        new CustomJwtAuthenticationConverter()
-                                )
+                                jwt.jwtAuthenticationConverter(jwtConverter)
                         )
                 );
+
 
         return http.build();
     }
