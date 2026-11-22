@@ -18,12 +18,10 @@ import java.util.Objects;
 public class CustomJwtAuthenticationConverter
         implements Converter<Jwt, AbstractAuthenticationToken> {
 
-    private final IUserRepository userRepository;
+    private final IUserRepository userRepository = null;
 
-    public CustomJwtAuthenticationConverter(
-            IUserRepository userRepository) {
+    public CustomJwtAuthenticationConverter() {
 
-        this.userRepository = userRepository;
     }
 
     @Override
