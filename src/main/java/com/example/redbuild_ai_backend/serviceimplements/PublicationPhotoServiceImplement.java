@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import java.util.List;
 import java.util.Objects;
@@ -81,8 +83,9 @@ public class PublicationPhotoServiceImplement
 
         photo.setUrlPhoto(dto.getUrlPhoto());
         photo.setDescriptionPhoto(dto.getDescriptionPhoto());
-        photo.setUploadDate(dto.getUploadDate());
-        photo.setPublication(publication);
+        photo.setUploadDate(
+                LocalDateTime.now(ZoneId.of("America/Lima"))
+        );        photo.setPublication(publication);
 
         return convertToDTO(pR.save(photo));
     }
