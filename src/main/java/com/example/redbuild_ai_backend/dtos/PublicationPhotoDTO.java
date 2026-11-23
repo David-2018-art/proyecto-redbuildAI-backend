@@ -15,7 +15,6 @@ public class PublicationPhotoDTO {
 
     private String descriptionPhoto;
 
-    @NotNull(message = "La fecha de subida es obligatoria")
     private LocalDateTime uploadDate;
 
     @NotNull(message = "El ID de la publicacion es obligatorio")
