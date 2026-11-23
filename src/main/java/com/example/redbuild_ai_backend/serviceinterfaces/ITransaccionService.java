@@ -19,4 +19,6 @@ public interface ITransaccionService {
     void update(Transaccion transaccion);
 
     void delete(Long id);
+
+    List<Transaccion> findReceivedByPublisherEmail(String email);
 }
