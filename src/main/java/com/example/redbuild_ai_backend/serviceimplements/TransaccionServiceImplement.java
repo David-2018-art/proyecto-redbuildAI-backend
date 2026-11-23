@@ -139,6 +139,10 @@ public class TransaccionServiceImplement
         }
     }
 
+    @Override
+    public List<Transaccion> findReceivedByPublisherEmail(String email) {
+        return tR.findReceivedByPublisherEmail(email);    }
+
     private void validarDatos(Transaccion transaccion) {
 
         String tipo = transaccion.getTypeTransaction();

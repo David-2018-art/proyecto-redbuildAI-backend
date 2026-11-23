@@ -43,4 +43,16 @@ public interface ITransaccionRepository
     List<Object[]> resumenPorEmpresa(
             @Param("idEmpresa") Long idEmpresa
     );
+
+    @Query("""
+        SELECT t FROM Transaccion t
+        JOIN FETCH t.user
+        JOIN FETCH t.publication p
+        JOIN FETCH p.publisher publisher
+        WHERE LOWER(publisher.emailUser) = LOWER(:email)
+        ORDER BY t.dateRegisterTransaction DESC
+        """)
+    List<Transaccion> findReceivedByPublisherEmail(
+            @Param("email") String email
+    );
 }

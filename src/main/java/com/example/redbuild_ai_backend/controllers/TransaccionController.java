@@ -83,7 +83,14 @@ public class TransaccionController {
 
         Transaccion transaccion = buscarTransaccion(id);
 
-        verificarPermiso(transaccion.getUser(), authentication);
+        boolean esPublicador = transaccion.getPublication()
+                .getPublisher()
+                .getEmailUser()
+                .equalsIgnoreCase(authentication.getName());
+
+        if (!esPublicador) {
+            verificarPermiso(transaccion.getUser(), authentication);
+        }
 
         return ResponseEntity.ok(convertirDTO(transaccion));
     }
@@ -466,6 +473,19 @@ public class TransaccionController {
                             + " a " + nuevoEstado
             );
         }
+    }
+
+
+    @GetMapping("/recibidas")
+    public ResponseEntity<List<TransaccionDTO>> recibidas(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                tS.findReceivedByPublisherEmail(authentication.getName())
+                        .stream()
+                        .map(this::convertirDTO)
+                        .toList()
+        );
     }
 
 
