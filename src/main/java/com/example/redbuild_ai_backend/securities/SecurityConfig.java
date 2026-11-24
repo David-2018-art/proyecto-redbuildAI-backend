@@ -115,16 +115,26 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers("/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/Users").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/Roles").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/crops/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/Roles").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/Roles/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/Roles").permitAll()
 
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Consulta pública utilizada por el registro
+                        .requestMatchers(HttpMethod.GET, "/api/Roles").permitAll()
+
+                        // Las demás operaciones sobre roles requieren Administrador
+                        .requestMatchers("/api/Roles", "/api/Roles/**")
+                        .hasAuthority("Administrador")
+
+                        .requestMatchers(HttpMethod.GET, "/api/crops/**").permitAll()
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
 

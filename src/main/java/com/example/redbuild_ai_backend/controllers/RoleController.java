@@ -40,7 +40,8 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<RoleDTO> registrar(@Valid @RequestBody RoleDTO dto){
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<RoleDTO> registrar(@Valid @RequestBody RoleDTO dto) {
         Role role=modelMapper.map(dto,Role.class);
         role.setIdRole(null);
         rS.insert(role);
@@ -76,7 +77,8 @@ public class RoleController {
     }
 
     @PutMapping
-    public ResponseEntity<RoleDTO> actualizar(@Valid @RequestBody RoleDTO dto){
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<RoleDTO> actualizar(@Valid @RequestBody RoleDTO dto) {
         if(dto.getIdRole()==null){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El id del rol es obligatorio para actualizar");
 
@@ -99,7 +101,8 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id){
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<String> eliminar(@PathVariable Long id) {
         Role role=rS.listId(id)
                 .orElseThrow(()->new ResourceNotFoundException("No se encuentra el rol con ID: " + id));
         rS.delete(role.getIdRole());
