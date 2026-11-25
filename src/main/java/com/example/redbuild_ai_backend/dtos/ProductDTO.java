@@ -75,6 +75,8 @@ public class ProductDTO {
     @NotNull(message = "El propietario es obligatorio")
     @Positive(message = "El ID del propietario debe ser mayor que cero")
     private Long idUser;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String nombrePropietario;
 
     public ProductDTO() {
     }
@@ -183,4 +185,13 @@ public class ProductDTO {
     public void setIdUser(Long idUser) {
         this.idUser = idUser;
     }
+
+    public String getNombrePropietario() {
+        return nombrePropietario;
+    }
+
+    public void setNombrePropietario(String nombrePropietario) {
+        this.nombrePropietario = nombrePropietario;
+    }
+
 }

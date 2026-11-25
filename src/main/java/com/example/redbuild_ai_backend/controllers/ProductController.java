@@ -55,6 +55,11 @@ public class ProductController {
                             product.getUser().getIdUser()
                     );
 
+                    dto.setNombrePropietario(
+                            product.getUser().getNameUser() + " " +
+                                    product.getUser().getLastNameUser()
+                    );
+
                     return dto;
                 })
                 .toList();
@@ -147,6 +152,11 @@ public class ProductController {
 
         dto.setIdUser(
                 product.getUser().getIdUser()
+        );
+
+        dto.setNombrePropietario(
+                product.getUser().getNameUser() + " " +
+                        product.getUser().getLastNameUser()
         );
 
         return ResponseEntity.ok(dto);

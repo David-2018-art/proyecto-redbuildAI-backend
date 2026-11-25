@@ -54,6 +54,7 @@ public class TransaccionServiceImplement
         }
 
         validarDatos(transaccion);
+        validarDisponibilidad(transaccion);
 
         if (!"Solicitada".equals(transaccion.getStatusTransaction())) {
             throw new ResponseStatusException(
@@ -224,6 +225,45 @@ public class TransaccionServiceImplement
                     HttpStatus.CONFLICT,
                     "El tipo de operación debe coincidir "
                             + "con el de la publicación"
+            );
+        }
+    }
+
+    private void validarDisponibilidad(Transaccion transaccion) {
+
+        var publicacion = transaccion.getPublication();
+        var producto = publicacion.getProduct();
+
+        if (Objects.equals(
+                transaccion.getUser().getIdUser(),
+                publicacion.getPublisher().getIdUser())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No puedes adquirir tus propias publicaciones"
+            );
+        }
+
+        if (!"Disponible".equals(publicacion.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La publicación ya no está disponible"
+            );
+        }
+
+        if (!"Activo".equals(producto.getStatusProduct())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El producto no se encuentra activo"
+            );
+        }
+
+        if (transaccion.getQuantityTransaction()
+                .compareTo(producto.getQuantityProduct()) > 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La cantidad solicitada supera el stock disponible"
             );
         }
     }
