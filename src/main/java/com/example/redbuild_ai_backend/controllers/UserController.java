@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -51,11 +52,11 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<UserDTO> buscarId(@PathVariable Long id, Authentication authentication){
         User user = uS.listId(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No se encuentra el usuario con ID: " + id));
+                        "No se encuentra el cliente con ID: " + id));
 
         boolean esAdministrador = authentication.getAuthorities()
                 .stream()
@@ -67,7 +68,7 @@ public class UserController {
         if (!esAdministrador && !esPropietario) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "No tienes permiso para consultar este usuario"
+                    "No tienes permiso para consultar este cliente"
             );
         }
 
@@ -76,6 +77,26 @@ public class UserController {
 
         return ResponseEntity.ok(dto);
     }
+
+    @GetMapping("/{id}/nombre")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
+    public ResponseEntity<Map<String, String>> obtenerNombre(
+            @PathVariable("id") Long id) {
+
+        User user = uS.listId(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe el usuario con ID: " + id
+                ));
+
+        String nombreCompleto = (
+                user.getNameUser() + " " + user.getLastNameUser()
+        ).trim();
+
+        return ResponseEntity.ok(
+                Map.of("nombreCompleto", nombreCompleto)
+        );
+    }
+
 
     @GetMapping("/estados")
     @PreAuthorize("hasAuthority('Administrador')")
@@ -107,7 +128,7 @@ public class UserController {
 
 
     @PutMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<UserDTO> actualizar(@Valid @RequestBody UserDTO dto,
                                               Authentication authentication){
         if (dto.getIdUser() == null) {
@@ -119,7 +140,7 @@ public class UserController {
 
         User user = uS.listId(dto.getIdUser())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "No existe un usuario con el ID: " + dto.getIdUser()
+                        "No existe un cliente con el ID: " + dto.getIdUser()
                 ));
 
         boolean esAdministrador = authentication.getAuthorities()
