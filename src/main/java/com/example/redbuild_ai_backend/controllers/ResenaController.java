@@ -25,7 +25,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/Resenas")
 @Tag(name = "Reseñas", description = "Reseñas entre usuarios de una transacción")
-@PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+@PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
 public class ResenaController {
 
     private final IResenaService rS;

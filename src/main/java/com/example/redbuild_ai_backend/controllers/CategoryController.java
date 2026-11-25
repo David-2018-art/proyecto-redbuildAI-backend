@@ -31,7 +31,7 @@ public class CategoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<CategoryDTO>> listar(){
         List<CategoryDTO> lista=cS.list()
                 .stream()
@@ -59,7 +59,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<CategoryDTO> buscarId(@PathVariable Long id){
         Category category = cS.listId(id)
                 .orElseThrow(()->new ResourceNotFoundException("No se encuentra la categoria con ID: " + id));
@@ -110,7 +110,7 @@ public class CategoryController {
 
 
     @GetMapping("/estado")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<CategoryDTO>>buscarPorEstado(@RequestParam("estado") String estado){
         if (!"Activo".equals(estado) && !"Inactivo".equals(estado)) {
             throw new ResponseStatusException(

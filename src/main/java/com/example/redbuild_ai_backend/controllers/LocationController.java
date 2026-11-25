@@ -29,7 +29,7 @@ public class LocationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<LocationDTO>> listar(){
         List<LocationDTO> lista=lS.list()
                 .stream()
@@ -60,7 +60,7 @@ public class LocationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<LocationDTO> buscarId(@PathVariable Long id){
         Location location = lS.listId(id)
                 .orElseThrow(() ->
@@ -118,7 +118,7 @@ public class LocationController {
     }
 
     @GetMapping("/department/{department}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<LocationDTO>> buscarPorDepartamento(
             @PathVariable String department) {
         List<LocationDTO> lista = lS.findByDepartment(department)
