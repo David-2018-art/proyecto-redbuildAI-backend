@@ -198,38 +198,75 @@ public class UserController {
     public ResponseEntity<UserDTO> registrar(
             @Valid @RequestBody UserRegisterDTO dto) {
 
-        // El servidor elige el rol de las cuentas nuevas.
-        Role role = rS.buscarPorNombre("Cliente")
+        String tipoCuenta = dto.getTipoCuenta();
+
+        // Impedir el registro público como Administrador.
+        if (!"Cliente".equals(tipoCuenta)
+                && !"Empresa".equals(tipoCuenta)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Solo se permite el registro como Cliente o Empresa"
+            );
+        }
+
+        if ("Empresa".equals(tipoCuenta)
+                && (dto.getCompanyNameUser() == null
+                || dto.getCompanyNameUser().isBlank())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre de la empresa es obligatorio"
+            );
+        }
+
+        if (dto.getPasswordUser()
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                .length > 72) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La contraseña excede el tamaño permitido"
+            );
+        }
+
+        // Buscar el rol por nombre y no por ID.
+        Role role = rS.buscarPorNombre(tipoCuenta)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "No está configurado el rol Cliente"
+                        "No está configurado el rol " + tipoCuenta
                 ));
 
         if (!"Activo".equals(role.getStatusRole())) {
+
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "El registro de usuarios no está disponible"
+                    "El registro para este tipo de cuenta no está disponible"
             );
         }
 
         User user = new User();
 
-        user.setNameUser(dto.getNameUser());
+        user.setNameUser(dto.getNameUser().trim());
         user.setLastNameUser(dto.getLastNameUser());
-        user.setEmailUser(dto.getEmailUser());
+        user.setEmailUser(dto.getEmailUser().trim());
         user.setPasswordUser(dto.getPasswordUser());
         user.setPhoneUser(dto.getPhoneUser());
-        user.setCompanyNameUser(dto.getCompanyNameUser());
 
+        user.setCompanyNameUser(
+                "Empresa".equals(tipoCuenta)
+                        ? dto.getCompanyNameUser().trim()
+                        : ""
+        );
 
         user.setIdUser(null);
         user.setRole(role);
         user.setStatusUser("Activo");
 
-
         uS.insert(user);
 
         UserDTO responseDTO = modelMapper.map(user, UserDTO.class);
+
         responseDTO.setIdRole(user.getRole().getIdRole());
 
         URI location = ServletUriComponentsBuilder

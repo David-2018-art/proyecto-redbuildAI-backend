@@ -3,6 +3,7 @@ package com.example.redbuild_ai_backend.dtos;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 public class UserRegisterDTO {
 
@@ -19,7 +20,7 @@ public class UserRegisterDTO {
     private String emailUser;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, max = 100)
+    @Size(min = 6, max = 72)
     private String passwordUser;
 
     @Size(max = 20)
@@ -27,6 +28,13 @@ public class UserRegisterDTO {
 
     @Size(max = 100)
     private String companyNameUser;
+
+    @NotBlank(message = "El tipo de cuenta es obligatorio")
+    @Pattern(
+            regexp = "^(Cliente|Empresa)$",
+            message = "Solo se permite Cliente o Empresa"
+    )
+    private String tipoCuenta = "Cliente";
 
     public UserRegisterDTO() {
     }
@@ -77,5 +85,13 @@ public class UserRegisterDTO {
 
     public void setCompanyNameUser(String companyNameUser) {
         this.companyNameUser = companyNameUser;
+    }
+
+    public String getTipoCuenta() {
+        return tipoCuenta;
+    }
+
+    public void setTipoCuenta(String tipoCuenta) {
+        this.tipoCuenta = tipoCuenta;
     }
 }
