@@ -20,13 +20,13 @@ public class PublicationPhotoController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<PublicationPhotoDTO>> getAll(){
         return ResponseEntity.ok(publicationPhotoService.getAll());
     }
 
     @GetMapping("/publication/{publicationId}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<PublicationPhotoDTO>> getByPublicationId(
             @PathVariable Long publicationId) {
         return ResponseEntity.ok(
@@ -35,13 +35,13 @@ public class PublicationPhotoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<PublicationPhotoDTO> getById(@PathVariable Long id){
         return ResponseEntity.ok(publicationPhotoService.getById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<PublicationPhotoDTO> create(@Valid @RequestBody PublicationPhotoDTO publicationPhotoDTO){
 
         PublicationPhotoDTO createdPhoto =
@@ -52,14 +52,14 @@ public class PublicationPhotoController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<PublicationPhotoDTO> update(@PathVariable Long id, @Valid @RequestBody PublicationPhotoDTO publicationPhotoDTO) {
 
         return ResponseEntity.ok(publicationPhotoService.update(id, publicationPhotoDTO));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         publicationPhotoService.delete(id);
         return ResponseEntity.ok("Foto eliminada correctamente");

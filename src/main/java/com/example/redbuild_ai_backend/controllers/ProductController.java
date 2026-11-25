@@ -39,7 +39,7 @@ public class ProductController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<List<ProductDTO>>listar(){
         List<ProductDTO> lista = pS.list()
                 .stream()
@@ -64,7 +64,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<ProductDTO> registrar(
             @Valid @RequestBody ProductDTO dto,
             Authentication authentication) {
@@ -129,7 +129,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<ProductDTO> buscarId(
             @PathVariable("id") Long id) {
 
@@ -153,7 +153,7 @@ public class ProductController {
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<ProductDTO>actualizar(@Valid @RequestBody ProductDTO dto, Authentication  authentication) {
         if (dto.getIdProduct() == null) {
             throw new ResponseStatusException(
@@ -222,7 +222,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+    @PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
     public ResponseEntity<String> eliminar(
             @PathVariable Long id,
             Authentication authentication) {

@@ -20,7 +20,7 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/publications")
-@PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+@PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
 public class PublicationController {
 
     private final IPublicationService publicationService;

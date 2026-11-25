@@ -30,7 +30,7 @@ import java.util.Objects;
         name = "Transacciones",
         description = "Gestiona solicitudes de compra y donación"
 )
-@PreAuthorize("hasAnyAuthority('Usuario','Empresa','Administrador')")
+@PreAuthorize("hasAnyAuthority('Cliente','Empresa','Administrador')")
 public class TransaccionController {
 
     private final ITransaccionService tS;

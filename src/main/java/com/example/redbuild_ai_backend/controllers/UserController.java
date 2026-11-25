@@ -178,10 +178,10 @@ public class UserController {
             @Valid @RequestBody UserRegisterDTO dto) {
 
         // El servidor elige el rol de las cuentas nuevas.
-        Role role = rS.buscarPorNombre("Usuario")
+        Role role = rS.buscarPorNombre("Cliente")
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "No está configurado el rol Usuario"
+                        "No está configurado el rol Cliente"
                 ));
 
         if (!"Activo".equals(role.getStatusRole())) {
